@@ -1,0 +1,16 @@
+.PHONY: up down migrate-up migrate-down test
+
+up:
+	docker compose up -d
+
+down:
+	docker compose down
+
+migrate-up:
+	goose -dir migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" up
+
+migrate-down:
+	goose -dir migrations postgres "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USER) password=$(DB_PASSWORD) dbname=$(DB_NAME) sslmode=disable" down
+
+test:
+	go test ./... -v -count=1
