@@ -1,41 +1,48 @@
 package main
 
 import (
-	"log"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"legalflow/internal/config"
 	"legalflow/internal/database"
 	"legalflow/internal/health"
+	"legalflow/internal/logger"
+	"legalflow/internal/middleware"
 )
 
 func main() {
-	cfg := database.ConfigFromEnv()
-
-	db, err := database.Connect(cfg)
+	cfg, err := config.Load()
 	if err != nil {
-		log.Printf("Warning: database connection failed: %v", err)
+		panic(err)
+	}
+
+	log := logger.NewDefault()
+
+	db, err := database.Connect(database.Config{
+		Host:     cfg.DBHost,
+		Port:     cfg.DBPort,
+		User:     cfg.DBUser,
+		Password: cfg.DBPassword,
+		DBName:   cfg.DBName,
+	})
+	if err != nil {
+		log.Info("Warning: database connection failed: " + err.Error())
 	} else {
 		defer db.Close()
-		log.Println("Database connected successfully")
+		log.Info("Database connected successfully")
 	}
 
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Recovery(log.Inner()))
+	r.Use(middleware.AccessLog(log.Inner()))
 
 	healthHandler := health.NewHandler()
 	healthHandler.Register(r)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("Server starting on :%s", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatal(err)
+	log.Info("Server starting on :" + cfg.AppPort)
+	if err := http.ListenAndServe(":"+cfg.AppPort, r); err != nil {
+		panic(err)
 	}
 }
