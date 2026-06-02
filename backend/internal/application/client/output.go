@@ -1,11 +1,23 @@
 package client
 
+import "time"
+
 type CreateClientOutput struct {
 	ID    string
 	Name  string
 	CPF   string
 	Email string
 	Phone string
+}
+
+type GetClientByIDOutput struct {
+	ID        string
+	Name      string
+	CPF       string
+	Email     string
+	Phone     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type ClientDTO struct {

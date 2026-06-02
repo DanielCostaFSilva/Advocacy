@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	domain "legalflow/internal/domain/client"
@@ -77,6 +78,18 @@ func TestClientRepository_FindByID_ShouldReturnClient(t *testing.T) {
 	assert.Equal(t, original.ID, found.ID)
 	assert.Equal(t, "Find ID", found.Name)
 	assert.Equal(t, "66677788899", found.CPF)
+}
+
+func TestClientRepository_FindByID_ShouldReturnNilWhenNotFound(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupClients(t, db)
+
+	found, err := repo.FindByID(ctx, uuid.New())
+	require.NoError(t, err)
+	assert.Nil(t, found)
 }
 
 func TestClientRepository_List_ShouldReturnPaginatedResult(t *testing.T) {

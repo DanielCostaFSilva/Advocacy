@@ -74,12 +74,16 @@ func main() {
 		listClients := appClient.NewListClientsUseCase(clientRepo)
 		listHandler := httpClient.NewListHandler(listClients)
 
+		getClient := appClient.NewGetClientByIDUseCase(clientRepo)
+		getHandler := httpClient.NewGetHandler(getClient)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
 			meHandler.Register(r)
 			clientHandler.Register(r)
 			listHandler.Register(r)
+			getHandler.Register(r)
 		})
 	}
 
