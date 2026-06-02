@@ -6,3 +6,12 @@ type CreateClientInput struct {
 	Email string
 	Phone string
 }
+
+type ListClientsInput struct {
+	Page     int
+	PageSize int
+	Name     string
+	CPF      string
+	Sort     string
+	Order    string
+}
