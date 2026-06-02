@@ -4,9 +4,13 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"legalflow/internal/application/user"
 	"legalflow/internal/config"
 	"legalflow/internal/database"
 	"legalflow/internal/health"
+	httpuser "legalflow/internal/http/user"
+	"legalflow/internal/infrastructure/hasher"
+	"legalflow/internal/infrastructure/persistence/postgres"
 	"legalflow/internal/logger"
 	"legalflow/internal/middleware"
 )
@@ -40,6 +44,14 @@ func main() {
 
 	healthHandler := health.NewHandler()
 	healthHandler.Register(r)
+
+	if db != nil {
+		userRepo := postgres.NewUserRepository(db)
+		pwdHasher := hasher.NewBcryptHasher()
+		createUser := user.NewCreateUserUseCase(userRepo, pwdHasher)
+		userHandler := httpuser.NewHandler(createUser)
+		userHandler.Register(r)
+	}
 
 	log.Info("Server starting on :" + cfg.AppPort)
 	if err := http.ListenAndServe(":"+cfg.AppPort, r); err != nil {
