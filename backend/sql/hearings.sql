@@ -8,6 +8,10 @@ SELECT * FROM hearings
 WHERE id = $1
 LIMIT 1;
 
+-- name: CountHearingsByCaseID :one
+SELECT COUNT(*) FROM hearings
+WHERE case_id = $1;
+
 -- name: ListHearingsByCaseID :many
 SELECT * FROM hearings
 WHERE case_id = $1

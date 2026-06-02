@@ -7,6 +7,7 @@ import (
 	appAuth "legalflow/internal/application/auth"
 	appCase "legalflow/internal/application/legalcase"
 	appClient "legalflow/internal/application/client"
+	appHearing "legalflow/internal/application/hearing"
 	appTimeline "legalflow/internal/application/timeline"
 	"legalflow/internal/application/user"
 	"legalflow/internal/config"
@@ -14,6 +15,7 @@ import (
 	"legalflow/internal/health"
 	httpAuth 	"legalflow/internal/http/auth"
 	httpClient "legalflow/internal/http/client"
+	httpHearing "legalflow/internal/http/hearing"
 	httpCase "legalflow/internal/http/legalcase"
 	httpTimeline "legalflow/internal/http/timeline"
 	httpuser "legalflow/internal/http/user"
@@ -104,6 +106,13 @@ func main() {
 		getCaseTimeline := appTimeline.NewGetCaseTimelineUseCase(timelineRepo, caseRepo)
 		timelineHandler := httpTimeline.NewHandler(getCaseTimeline)
 
+		hearingRepo := postgres.NewHearingRepository(db)
+		createHearing := appHearing.NewCreateHearingUseCase(hearingRepo, caseRepo, timelineRepo)
+		hearingHandler := httpHearing.NewHandler(createHearing)
+
+		listHearings := appHearing.NewListHearingsUseCase(hearingRepo)
+		listHearingsHandler := httpHearing.NewListHandler(listHearings)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -118,6 +127,8 @@ func main() {
 			getCaseHandler.Register(r)
 			statusHandler.Register(r)
 			timelineHandler.Register(r)
+			listHearingsHandler.Register(r)
+			hearingHandler.Register(r)
 		})
 	}
 

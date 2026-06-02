@@ -13,6 +13,18 @@ import (
 	"github.com/google/uuid"
 )
 
+const countHearingsByCaseID = `-- name: CountHearingsByCaseID :one
+SELECT COUNT(*) FROM hearings
+WHERE case_id = $1
+`
+
+func (q *Queries) CountHearingsByCaseID(ctx context.Context, caseID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countHearingsByCaseID, caseID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createHearing = `-- name: CreateHearing :one
 INSERT INTO hearings (case_id, title, description, type, location, scheduled_at)
 VALUES ($1, $2, $3, $4, $5, $6)
