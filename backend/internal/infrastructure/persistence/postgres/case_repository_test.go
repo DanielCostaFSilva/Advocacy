@@ -137,6 +137,167 @@ func createTestClient(t *testing.T, repo *ClientRepository, ctx context.Context)
 	return client
 }
 
+func TestCaseRepository_List_ShouldReturnEmpty(t *testing.T) {
+	db := connectDB(t)
+	caseRepo := NewCaseRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+
+	cases, total, err := caseRepo.List(ctx, domain.ListCasesParams{
+		Limit:  20,
+		Offset: 0,
+	})
+	require.NoError(t, err)
+	assert.Empty(t, cases)
+	assert.Equal(t, int64(0), total)
+}
+
+func TestCaseRepository_List_ShouldReturnAllCases(t *testing.T) {
+	db := connectDB(t)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+
+	c1, _ := domain.NewCase(client.ID, "LIST-001", "Alpha", "Desc", "TJSP")
+	c2, _ := domain.NewCase(client.ID, "LIST-002", "Beta", "Desc", "TJPE")
+	require.NoError(t, caseRepo.Create(ctx, c1))
+	require.NoError(t, caseRepo.Create(ctx, c2))
+
+	cases, total, err := caseRepo.List(ctx, domain.ListCasesParams{
+		Limit:  20,
+		Offset: 0,
+	})
+	require.NoError(t, err)
+	assert.Len(t, cases, 2)
+	assert.Equal(t, int64(2), total)
+}
+
+func TestCaseRepository_List_ShouldFilterByStatus(t *testing.T) {
+	db := connectDB(t)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+
+	c1, _ := domain.NewCase(client.ID, "STA-001", "Status 1", "Desc", "TJSP")
+	c2, _ := domain.NewCase(client.ID, "STA-002", "Status 2", "Desc", "TJSP")
+	require.NoError(t, caseRepo.Create(ctx, c1))
+	require.NoError(t, caseRepo.Create(ctx, c2))
+
+	cases, total, err := caseRepo.List(ctx, domain.ListCasesParams{
+		Limit:  20,
+		Offset: 0,
+		Status: string(domain.CaseStatusDraft),
+	})
+	require.NoError(t, err)
+	assert.Len(t, cases, 2)
+	assert.Equal(t, int64(2), total)
+
+	cases, total, err = caseRepo.List(ctx, domain.ListCasesParams{
+		Limit:  20,
+		Offset: 0,
+		Status: string(domain.CaseStatusActive),
+	})
+	require.NoError(t, err)
+	assert.Empty(t, cases)
+	assert.Equal(t, int64(0), total)
+}
+
+func TestCaseRepository_List_ShouldFilterByNumber(t *testing.T) {
+	db := connectDB(t)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+
+	c1, _ := domain.NewCase(client.ID, "NUM-FILTER-001", "Filtered", "Desc", "TJSP")
+	c2, _ := domain.NewCase(client.ID, "OTHER-002", "Not Found", "Desc", "TJSP")
+	require.NoError(t, caseRepo.Create(ctx, c1))
+	require.NoError(t, caseRepo.Create(ctx, c2))
+
+	cases, total, err := caseRepo.List(ctx, domain.ListCasesParams{
+		Limit:  20,
+		Offset: 0,
+		Number: "FILTER",
+	})
+	require.NoError(t, err)
+	assert.Len(t, cases, 1)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "NUM-FILTER-001", cases[0].Number)
+}
+
+func TestCaseRepository_List_ShouldSortByTitleDesc(t *testing.T) {
+	db := connectDB(t)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+
+	c1, _ := domain.NewCase(client.ID, "SORT-001", "Alpha", "Desc", "TJSP")
+	c2, _ := domain.NewCase(client.ID, "SORT-002", "Beta", "Desc", "TJPE")
+	require.NoError(t, caseRepo.Create(ctx, c1))
+	require.NoError(t, caseRepo.Create(ctx, c2))
+
+	cases, total, err := caseRepo.List(ctx, domain.ListCasesParams{
+		Limit:  20,
+		Offset: 0,
+		Sort:   "title",
+		Order:  "desc",
+	})
+	require.NoError(t, err)
+	assert.Len(t, cases, 2)
+	assert.Equal(t, int64(2), total)
+	assert.Equal(t, "Beta", cases[0].Title)
+	assert.Equal(t, "Alpha", cases[1].Title)
+}
+
+func TestCaseRepository_List_ShouldPaginate(t *testing.T) {
+	db := connectDB(t)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+
+	for i := 0; i < 5; i++ {
+		c, _ := domain.NewCase(client.ID, fmt.Sprintf("PAG-%03d", i+1), "Case", "Desc", "TJSP")
+		require.NoError(t, caseRepo.Create(ctx, c))
+	}
+
+	cases, total, err := caseRepo.List(ctx, domain.ListCasesParams{
+		Limit:  2,
+		Offset: 0,
+	})
+	require.NoError(t, err)
+	assert.Len(t, cases, 2)
+	assert.Equal(t, int64(5), total)
+
+	cases, total, err = caseRepo.List(ctx, domain.ListCasesParams{
+		Limit:  2,
+		Offset: 4,
+	})
+	require.NoError(t, err)
+	assert.Len(t, cases, 1)
+	assert.Equal(t, int64(5), total)
+}
+
 func cleanupCases(t *testing.T, db *sql.DB) {
 	t.Helper()
 	_, err := db.Exec("DELETE FROM cases")
