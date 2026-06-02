@@ -7,6 +7,10 @@ type CreateClientInput struct {
 	Phone string
 }
 
+type GetClientByIDInput struct {
+	ID string
+}
+
 type ListClientsInput struct {
 	Page     int
 	PageSize int

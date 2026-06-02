@@ -9,3 +9,7 @@ func (h *Handler) Register(r chi.Router) {
 func (h *ListHandler) Register(r chi.Router) {
 	r.Get("/clients", h.List)
 }
+
+func (h *GetHandler) Register(r chi.Router) {
+	r.Get("/clients/{id}", h.Get)
+}

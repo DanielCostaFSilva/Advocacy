@@ -1,5 +1,17 @@
 package client
 
+import "time"
+
+type GetClientResponse struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CPF       string    `json:"cpf"`
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type CreateClientResponse struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
