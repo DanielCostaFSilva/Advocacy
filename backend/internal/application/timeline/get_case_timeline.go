@@ -2,6 +2,7 @@ package timeline
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	timelineDomain "legalflow/internal/domain/timeline"
@@ -44,12 +45,17 @@ func (uc *GetCaseTimelineUseCase) Execute(ctx context.Context, input GetCaseTime
 
 	dtos := make([]TimelineEventDTO, len(events))
 	for i, e := range events {
-		dtos[i] = TimelineEventDTO{
+		dto := TimelineEventDTO{
 			ID:          e.ID.String(),
 			Type:        string(e.Type),
 			Description: e.Description,
 			CreatedAt:   e.CreatedAt,
 		}
+		if len(e.Metadata) > 0 {
+			raw := json.RawMessage(e.Metadata)
+			dto.Metadata = &raw
+		}
+		dtos[i] = dto
 	}
 
 	return &GetCaseTimelineOutput{
