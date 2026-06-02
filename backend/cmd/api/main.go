@@ -4,11 +4,14 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	appAuth "legalflow/internal/application/auth"
 	"legalflow/internal/application/user"
 	"legalflow/internal/config"
 	"legalflow/internal/database"
 	"legalflow/internal/health"
+	httpAuth "legalflow/internal/http/auth"
 	httpuser "legalflow/internal/http/user"
+	"legalflow/internal/infrastructure/auth"
 	"legalflow/internal/infrastructure/hasher"
 	"legalflow/internal/infrastructure/persistence/postgres"
 	"legalflow/internal/logger"
@@ -48,13 +51,50 @@ func main() {
 	if db != nil {
 		userRepo := postgres.NewUserRepository(db)
 		pwdHasher := hasher.NewBcryptHasher()
+		pwdVerifier := hasher.NewBcryptVerifier()
+		jwtService := auth.NewJWTService(cfg.JWTSecret, cfg.JWTExpirationMinutes)
+
 		createUser := user.NewCreateUserUseCase(userRepo, pwdHasher)
 		userHandler := httpuser.NewHandler(createUser)
 		userHandler.Register(r)
+
+		authUseCase := appAuth.NewAuthenticateUserUseCase(userRepo, pwdVerifier)
+		loginHandler := httpAuth.NewLoginHandler(authUseCase, jwtService)
+		loginHandler.Register(r)
+
+		getCurrentUser := appAuth.NewGetCurrentUserUseCase(userRepo)
+		meHandler := httpAuth.NewMeHandler(getCurrentUser)
+
+		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
+		r.Group(func(r chi.Router) {
+			r.Use(authMW)
+			meHandler.Register(r)
+		})
 	}
 
 	log.Info("Server starting on :" + cfg.AppPort)
 	if err := http.ListenAndServe(":"+cfg.AppPort, r); err != nil {
 		panic(err)
 	}
+}
+
+type jwtAdapter struct {
+	svc *auth.JWTService
+}
+
+func (a *jwtAdapter) Validate(token string) (*middleware.TokenClaims, error) {
+	claims, err := a.svc.Validate(token)
+	if err != nil {
+		return nil, err
+	}
+	return &middleware.TokenClaims{
+		UserID:    claims.UserID,
+		Email:     claims.Email,
+		IssuedAt:  claims.IssuedAt,
+		ExpiresAt: claims.ExpiresAt,
+	}, nil
+}
+
+func newJWTAdapter(svc *auth.JWTService) *jwtAdapter {
+	return &jwtAdapter{svc: svc}
 }
