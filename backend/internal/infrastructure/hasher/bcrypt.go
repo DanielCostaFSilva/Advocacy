@@ -17,3 +17,14 @@ func (h *BcryptHasher) Hash(password string) (string, error) {
 	}
 	return string(bytes), nil
 }
+
+type BcryptVerifier struct{}
+
+func NewBcryptVerifier() *BcryptVerifier {
+	return &BcryptVerifier{}
+}
+
+func (v *BcryptVerifier) Compare(plainPassword, hash string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plainPassword))
+}
+
