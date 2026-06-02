@@ -5,11 +5,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	appAuth "legalflow/internal/application/auth"
+	appClient "legalflow/internal/application/client"
 	"legalflow/internal/application/user"
 	"legalflow/internal/config"
 	"legalflow/internal/database"
 	"legalflow/internal/health"
 	httpAuth "legalflow/internal/http/auth"
+	httpClient "legalflow/internal/http/client"
 	httpuser "legalflow/internal/http/user"
 	"legalflow/internal/infrastructure/auth"
 	"legalflow/internal/infrastructure/hasher"
@@ -65,10 +67,15 @@ func main() {
 		getCurrentUser := appAuth.NewGetCurrentUserUseCase(userRepo)
 		meHandler := httpAuth.NewMeHandler(getCurrentUser)
 
+		clientRepo := postgres.NewClientRepository(db)
+		createClient := appClient.NewCreateClientUseCase(clientRepo)
+		clientHandler := httpClient.NewHandler(createClient)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
 			meHandler.Register(r)
+			clientHandler.Register(r)
 		})
 	}
 
