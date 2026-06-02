@@ -19,6 +19,7 @@ type Client struct {
 	Phone     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	DeletedAt *time.Time
 }
 
 func NewClient(name, cpf, email, phone string) (*Client, error) {
@@ -48,6 +49,27 @@ func NewClient(name, cpf, email, phone string) (*Client, error) {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}, nil
+}
+
+func (c *Client) SoftDelete() {
+	now := time.Now()
+	c.DeletedAt = &now
+}
+
+func (c *Client) Update(name, email, phone string) error {
+	if len(name) < 3 {
+		return ErrInvalidName
+	}
+	if email != "" {
+		if _, err := mail.ParseAddress(email); err != nil {
+			return ErrInvalidEmail
+		}
+	}
+	c.Name = name
+	c.Email = email
+	c.Phone = phone
+	c.UpdatedAt = time.Now()
+	return nil
 }
 
 func normalizeCPF(cpf string) string {

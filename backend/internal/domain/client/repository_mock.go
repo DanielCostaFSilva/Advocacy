@@ -10,6 +10,9 @@ type MockClientRepository struct {
 	CreateFunc    func(ctx context.Context, client *Client) error
 	FindByIDFunc  func(ctx context.Context, id uuid.UUID) (*Client, error)
 	FindByCPFFunc func(ctx context.Context, cpf string) (*Client, error)
+	UpdateFunc    func(ctx context.Context, client *Client) error
+	SoftDeleteFunc func(ctx context.Context, id uuid.UUID) error
+	ListFunc      func(ctx context.Context, params ListClientsParams) ([]Client, int64, error)
 }
 
 func (m *MockClientRepository) Create(ctx context.Context, client *Client) error {
@@ -31,4 +34,25 @@ func (m *MockClientRepository) FindByCPF(ctx context.Context, cpf string) (*Clie
 		return m.FindByCPFFunc(ctx, cpf)
 	}
 	return nil, nil
+}
+
+func (m *MockClientRepository) SoftDelete(ctx context.Context, id uuid.UUID) error {
+	if m.SoftDeleteFunc != nil {
+		return m.SoftDeleteFunc(ctx, id)
+	}
+	return nil
+}
+
+func (m *MockClientRepository) Update(ctx context.Context, client *Client) error {
+	if m.UpdateFunc != nil {
+		return m.UpdateFunc(ctx, client)
+	}
+	return nil
+}
+
+func (m *MockClientRepository) List(ctx context.Context, params ListClientsParams) ([]Client, int64, error) {
+	if m.ListFunc != nil {
+		return m.ListFunc(ctx, params)
+	}
+	return nil, 0, nil
 }

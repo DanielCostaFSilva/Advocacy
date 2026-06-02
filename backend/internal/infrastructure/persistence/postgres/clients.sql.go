@@ -11,10 +11,29 @@ import (
 	"github.com/google/uuid"
 )
 
+const countClients = `-- name: CountClients :one
+SELECT COUNT(*) FROM clients
+WHERE ($1 IS NULL OR name ILIKE '%' || $1 || '%')
+  AND ($2 IS NULL OR cpf = $2)
+  AND deleted_at IS NULL
+`
+
+type CountClientsParams struct {
+	Name interface{}
+	Cpf  interface{}
+}
+
+func (q *Queries) CountClients(ctx context.Context, arg CountClientsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countClients, arg.Name, arg.Cpf)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createClient = `-- name: CreateClient :one
 INSERT INTO clients (name, cpf, email, phone)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, cpf, email, phone, created_at, updated_at
+RETURNING id, name, cpf, email, phone, created_at, updated_at, deleted_at
 `
 
 type CreateClientParams struct {
@@ -40,13 +59,14 @@ func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (Cli
 		&i.Phone,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getClientByCPF = `-- name: GetClientByCPF :one
-SELECT id, name, cpf, email, phone, created_at, updated_at FROM clients
-WHERE cpf = $1
+SELECT id, name, cpf, email, phone, created_at, updated_at, deleted_at FROM clients
+WHERE cpf = $1 AND deleted_at IS NULL
 LIMIT 1
 `
 
@@ -61,13 +81,14 @@ func (q *Queries) GetClientByCPF(ctx context.Context, cpf string) (Client, error
 		&i.Phone,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
 
 const getClientByID = `-- name: GetClientByID :one
-SELECT id, name, cpf, email, phone, created_at, updated_at FROM clients
-WHERE id = $1
+SELECT id, name, cpf, email, phone, created_at, updated_at, deleted_at FROM clients
+WHERE id = $1 AND deleted_at IS NULL
 LIMIT 1
 `
 
@@ -82,6 +103,53 @@ func (q *Queries) GetClientByID(ctx context.Context, id uuid.UUID) (Client, erro
 		&i.Phone,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const softDeleteClient = `-- name: SoftDeleteClient :exec
+UPDATE clients
+SET deleted_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) SoftDeleteClient(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, softDeleteClient, id)
+	return err
+}
+
+const updateClient = `-- name: UpdateClient :one
+UPDATE clients
+SET name = $2, email = $3, phone = $4, updated_at = NOW()
+WHERE id = $1
+RETURNING id, name, cpf, email, phone, created_at, updated_at, deleted_at
+`
+
+type UpdateClientParams struct {
+	ID    uuid.UUID
+	Name  string
+	Email string
+	Phone string
+}
+
+func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error) {
+	row := q.db.QueryRowContext(ctx, updateClient,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.Phone,
+	)
+	var i Client
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Cpf,
+		&i.Email,
+		&i.Phone,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
