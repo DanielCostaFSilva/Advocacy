@@ -254,6 +254,12 @@ func mustClient(t *testing.T, name, cpf string) *domain.Client {
 
 func cleanupClients(t *testing.T, db *sql.DB) {
 	t.Helper()
-	_, err := db.Exec("DELETE FROM clients")
+	_, err := db.Exec("DELETE FROM timeline_events")
+	require.NoError(t, err)
+	_, err = db.Exec("DELETE FROM case_status_history")
+	require.NoError(t, err)
+	_, err = db.Exec("DELETE FROM cases")
+	require.NoError(t, err)
+	_, err = db.Exec("DELETE FROM clients")
 	require.NoError(t, err)
 }
