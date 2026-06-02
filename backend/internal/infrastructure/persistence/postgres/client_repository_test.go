@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,6 +15,7 @@ func TestClientRepository_Create_ShouldSaveSuccessfully(t *testing.T) {
 	repo := NewClientRepository(db)
 	ctx := context.Background()
 
+	cleanupClients(t, db)
 	client, err := domain.NewClient("Jane Doe", "11122233344", "jane@example.com", "11999999999")
 	require.NoError(t, err)
 
@@ -27,6 +29,7 @@ func TestClientRepository_Create_ShouldReturnDuplicateCPFError(t *testing.T) {
 	repo := NewClientRepository(db)
 	ctx := context.Background()
 
+	cleanupClients(t, db)
 	client1, err := domain.NewClient("John Doe", "99988877766", "john@example.com", "11999999999")
 	require.NoError(t, err)
 	err = repo.Create(ctx, client1)
@@ -43,6 +46,7 @@ func TestClientRepository_FindByCPF_ShouldReturnClient(t *testing.T) {
 	repo := NewClientRepository(db)
 	ctx := context.Background()
 
+	cleanupClients(t, db)
 	original, err := domain.NewClient("Find CPF", "55544433322", "findcpf@example.com", "11999999999")
 	require.NoError(t, err)
 	err = repo.Create(ctx, original)
@@ -61,6 +65,7 @@ func TestClientRepository_FindByID_ShouldReturnClient(t *testing.T) {
 	repo := NewClientRepository(db)
 	ctx := context.Background()
 
+	cleanupClients(t, db)
 	original, err := domain.NewClient("Find ID", "66677788899", "findid@example.com", "11999999999")
 	require.NoError(t, err)
 	err = repo.Create(ctx, original)
@@ -72,4 +77,95 @@ func TestClientRepository_FindByID_ShouldReturnClient(t *testing.T) {
 	assert.Equal(t, original.ID, found.ID)
 	assert.Equal(t, "Find ID", found.Name)
 	assert.Equal(t, "66677788899", found.CPF)
+}
+
+func TestClientRepository_List_ShouldReturnPaginatedResult(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupClients(t, db)
+	assert.NoError(t, repo.Create(ctx, mustClient(t, "Alice", "11111111111")))
+	assert.NoError(t, repo.Create(ctx, mustClient(t, "Bob", "22222222222")))
+
+	clients, total, err := repo.List(ctx, domain.ListClientsParams{
+		Offset: 0,
+		Limit:  10,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(clients))
+	assert.Equal(t, int64(2), total)
+}
+
+func TestClientRepository_List_ShouldFilterByName(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupClients(t, db)
+	assert.NoError(t, repo.Create(ctx, mustClient(t, "Alice", "33333333333")))
+	assert.NoError(t, repo.Create(ctx, mustClient(t, "Bob", "44444444444")))
+
+	clients, total, err := repo.List(ctx, domain.ListClientsParams{
+		Offset: 0,
+		Limit:  10,
+		Name:   "Ali",
+	})
+	require.NoError(t, err)
+	assert.Len(t, clients, 1)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Alice", clients[0].Name)
+}
+
+func TestClientRepository_List_ShouldFilterByCPF(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupClients(t, db)
+	assert.NoError(t, repo.Create(ctx, mustClient(t, "Alice", "55555555555")))
+	assert.NoError(t, repo.Create(ctx, mustClient(t, "Bob", "66666666666")))
+
+	clients, total, err := repo.List(ctx, domain.ListClientsParams{
+		Offset: 0,
+		Limit:  10,
+		CPF:    "55555555555",
+	})
+	require.NoError(t, err)
+	assert.Len(t, clients, 1)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Alice", clients[0].Name)
+}
+
+func TestClientRepository_List_ShouldSortByName(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupClients(t, db)
+	assert.NoError(t, repo.Create(ctx, mustClient(t, "Zara", "77777777777")))
+	assert.NoError(t, repo.Create(ctx, mustClient(t, "Anna", "88888888888")))
+
+	clients, _, err := repo.List(ctx, domain.ListClientsParams{
+		Offset: 0,
+		Limit:  10,
+		Sort:   "name",
+		Order:  "asc",
+	})
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(clients), 2)
+	assert.Equal(t, "Anna", clients[0].Name)
+}
+
+func mustClient(t *testing.T, name, cpf string) *domain.Client {
+	t.Helper()
+	client, err := domain.NewClient(name, cpf, name+"@example.com", "11999999999")
+	require.NoError(t, err)
+	return client
+}
+
+func cleanupClients(t *testing.T, db *sql.DB) {
+	t.Helper()
+	_, err := db.Exec("DELETE FROM clients")
+	require.NoError(t, err)
 }

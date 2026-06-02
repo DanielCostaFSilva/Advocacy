@@ -33,11 +33,18 @@ func connectDB(t *testing.T) *sql.DB {
 	return db
 }
 
+func cleanupUsers(t *testing.T, db *sql.DB) {
+	t.Helper()
+	_, err := db.Exec("DELETE FROM users")
+	require.NoError(t, err)
+}
+
 func TestUserRepository_Create_ShouldSaveSuccessfully(t *testing.T) {
 	db := connectDB(t)
 	repo := NewUserRepository(db)
 	ctx := context.Background()
 
+	cleanupUsers(t, db)
 	user, err := domain.NewUser("Jane Doe", "jane@example.com", "hash123")
 	require.NoError(t, err)
 
@@ -51,6 +58,7 @@ func TestUserRepository_Create_ShouldReturnDuplicateEmail(t *testing.T) {
 	repo := NewUserRepository(db)
 	ctx := context.Background()
 
+	cleanupUsers(t, db)
 	user1, err := domain.NewUser("John Doe", "duplicate@example.com", "hash123")
 	require.NoError(t, err)
 	err = repo.Create(ctx, user1)
@@ -67,6 +75,7 @@ func TestUserRepository_FindByEmail_ShouldReturnUser(t *testing.T) {
 	repo := NewUserRepository(db)
 	ctx := context.Background()
 
+	cleanupUsers(t, db)
 	original, err := domain.NewUser("Find Email", "findemail@example.com", "hash123")
 	require.NoError(t, err)
 	err = repo.Create(ctx, original)
@@ -84,6 +93,7 @@ func TestUserRepository_FindByID_ShouldReturnUser(t *testing.T) {
 	repo := NewUserRepository(db)
 	ctx := context.Background()
 
+	cleanupUsers(t, db)
 	original, err := domain.NewUser("Find ID", "findid@example.com", "hash123")
 	require.NoError(t, err)
 	err = repo.Create(ctx, original)

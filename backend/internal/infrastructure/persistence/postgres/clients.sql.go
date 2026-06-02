@@ -11,6 +11,24 @@ import (
 	"github.com/google/uuid"
 )
 
+const countClients = `-- name: CountClients :one
+SELECT COUNT(*) FROM clients
+WHERE ($1 IS NULL OR name ILIKE '%' || $1 || '%')
+  AND ($2 IS NULL OR cpf = $2)
+`
+
+type CountClientsParams struct {
+	Name interface{}
+	Cpf  interface{}
+}
+
+func (q *Queries) CountClients(ctx context.Context, arg CountClientsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countClients, arg.Name, arg.Cpf)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createClient = `-- name: CreateClient :one
 INSERT INTO clients (name, cpf, email, phone)
 VALUES ($1, $2, $3, $4)

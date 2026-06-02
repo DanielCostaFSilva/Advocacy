@@ -12,3 +12,8 @@ LIMIT 1;
 SELECT * FROM clients
 WHERE cpf = $1
 LIMIT 1;
+
+-- name: CountClients :one
+SELECT COUNT(*) FROM clients
+WHERE (sqlc.narg('name') IS NULL OR name ILIKE '%' || sqlc.narg('name') || '%')
+  AND (sqlc.narg('cpf') IS NULL OR cpf = sqlc.narg('cpf'));
