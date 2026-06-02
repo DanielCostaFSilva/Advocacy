@@ -18,6 +18,7 @@ func TestConfig_ShouldLoadFromEnv(t *testing.T) {
 	os.Setenv("DB_USER", "dbuser")
 	os.Setenv("DB_PASSWORD", "dbpass")
 	os.Setenv("DB_NAME", "dbname")
+	os.Setenv("JWT_SECRET", "test-secret")
 	defer os.Clearenv()
 
 	cfg, err := Load()
@@ -31,6 +32,8 @@ func TestConfig_ShouldLoadFromEnv(t *testing.T) {
 	assert.Equal(t, "dbuser", cfg.DBUser)
 	assert.Equal(t, "dbpass", cfg.DBPassword)
 	assert.Equal(t, "dbname", cfg.DBName)
+	assert.Equal(t, "test-secret", cfg.JWTSecret)
+	assert.Equal(t, 60, cfg.JWTExpirationMinutes)
 }
 
 func TestConfig_ShouldUseDefaults(t *testing.T) {
@@ -40,6 +43,7 @@ func TestConfig_ShouldUseDefaults(t *testing.T) {
 	os.Setenv("DB_USER", "postgres")
 	os.Setenv("DB_PASSWORD", "postgres")
 	os.Setenv("DB_NAME", "legalflow")
+	os.Setenv("JWT_SECRET", "my-secret")
 	defer os.Clearenv()
 
 	cfg, err := Load()
@@ -48,11 +52,21 @@ func TestConfig_ShouldUseDefaults(t *testing.T) {
 	assert.Equal(t, "law-office-api", cfg.AppName)
 	assert.Equal(t, "local", cfg.AppEnv)
 	assert.Equal(t, "8080", cfg.AppPort)
+	assert.Equal(t, 60, cfg.JWTExpirationMinutes)
 }
 
-func TestConfig_ShouldFailWhenDBHostMissing(t *testing.T) {
+func TestConfig_ShouldFailWhenRequiredVarsMissing(t *testing.T) {
 	os.Clearenv()
 	_, err := Load()
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "DB_HOST")
+}
+
+func TestConfig_ShouldFailWhenJWTSecretMissing(t *testing.T) {
+	os.Clearenv()
+	os.Setenv("DB_HOST", "localhost")
+	defer os.Clearenv()
+
+	_, err := Load()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "JWT_SECRET")
 }
