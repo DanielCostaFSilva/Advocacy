@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -63,14 +62,13 @@ func main() {
 		loginHandler := httpAuth.NewLoginHandler(authUseCase, jwtService)
 		loginHandler.Register(r)
 
+		getCurrentUser := appAuth.NewGetCurrentUserUseCase(userRepo)
+		meHandler := httpAuth.NewMeHandler(getCurrentUser)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
-			r.Get("/me", func(w http.ResponseWriter, r *http.Request) {
-				claims := middleware.GetClaims(r.Context())
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(claims)
-			})
+			meHandler.Register(r)
 		})
 	}
 
