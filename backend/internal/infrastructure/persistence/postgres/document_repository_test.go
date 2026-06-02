@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -113,4 +114,103 @@ func TestDocumentRepository_ListByCaseID_ShouldReturnOnlyMatchingCase(t *testing
 	require.NoError(t, err)
 	assert.Len(t, docs, 1)
 	assert.Equal(t, "Doc Case 1", docs[0].Name)
+}
+
+func TestDocumentRepository_ListByCaseIDPaginated_ShouldReturnPaginatedResult(t *testing.T) {
+	db := connectDB(t)
+	docRepo := NewDocumentRepository(db)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+	c := createTestCase(t, caseRepo, client.ID, ctx)
+
+	for i := 0; i < 5; i++ {
+		d, _ := domain.NewDocument(c.ID, fmt.Sprintf("Documento %d", i+1), "Desc", domain.DocumentTypeEvidence, fmt.Sprintf("doc%d.pdf", i+1), "application/pdf", int64(100*(i+1)), fmt.Sprintf("key%d", i+1))
+		require.NoError(t, docRepo.Create(ctx, d))
+	}
+
+	docs, total, err := docRepo.ListByCaseIDPaginated(ctx, domain.ListDocumentsParams{
+		CaseID: c.ID.String(),
+		Limit:  2,
+		Offset: 0,
+	})
+	require.NoError(t, err)
+	assert.Len(t, docs, 2)
+	assert.Equal(t, int64(5), total)
+
+	docs, total, err = docRepo.ListByCaseIDPaginated(ctx, domain.ListDocumentsParams{
+		CaseID: c.ID.String(),
+		Limit:  2,
+		Offset: 4,
+	})
+	require.NoError(t, err)
+	assert.Len(t, docs, 1)
+	assert.Equal(t, int64(5), total)
+}
+
+func TestDocumentRepository_ListByCaseIDPaginated_ShouldFilterByType(t *testing.T) {
+	db := connectDB(t)
+	docRepo := NewDocumentRepository(db)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+	c := createTestCase(t, caseRepo, client.ID, ctx)
+
+	d1, _ := domain.NewDocument(c.ID, "Contract Doc", "Desc", domain.DocumentTypeContract, "c.pdf", "application/pdf", 100, "k1")
+	d2, _ := domain.NewDocument(c.ID, "Evidence Doc", "Desc", domain.DocumentTypeEvidence, "e.pdf", "application/pdf", 200, "k2")
+	require.NoError(t, docRepo.Create(ctx, d1))
+	require.NoError(t, docRepo.Create(ctx, d2))
+
+	docs, total, err := docRepo.ListByCaseIDPaginated(ctx, domain.ListDocumentsParams{
+		CaseID: c.ID.String(),
+		Limit:  20,
+		Offset: 0,
+		Type:   "contract",
+	})
+	require.NoError(t, err)
+	assert.Len(t, docs, 1)
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Contract Doc", docs[0].Name)
+}
+
+func TestDocumentRepository_ListByCaseIDPaginated_ShouldSortByFileSize(t *testing.T) {
+	db := connectDB(t)
+	docRepo := NewDocumentRepository(db)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+	c := createTestCase(t, caseRepo, client.ID, ctx)
+
+	d1, _ := domain.NewDocument(c.ID, "Small", "Desc", domain.DocumentTypeContract, "s.pdf", "application/pdf", 100, "k1")
+	d2, _ := domain.NewDocument(c.ID, "Large", "Desc", domain.DocumentTypeContract, "l.pdf", "application/pdf", 500, "k2")
+	d3, _ := domain.NewDocument(c.ID, "Medium", "Desc", domain.DocumentTypeContract, "m.pdf", "application/pdf", 300, "k3")
+	require.NoError(t, docRepo.Create(ctx, d1))
+	require.NoError(t, docRepo.Create(ctx, d2))
+	require.NoError(t, docRepo.Create(ctx, d3))
+
+	docs, total, err := docRepo.ListByCaseIDPaginated(ctx, domain.ListDocumentsParams{
+		CaseID: c.ID.String(),
+		Limit:  20,
+		Offset: 0,
+		Sort:   "file_size",
+		Order:  "desc",
+	})
+	require.NoError(t, err)
+	assert.Len(t, docs, 3)
+	assert.Equal(t, int64(3), total)
+	assert.Equal(t, "Large", docs[0].Name)
+	assert.Equal(t, "Medium", docs[1].Name)
+	assert.Equal(t, "Small", docs[2].Name)
 }

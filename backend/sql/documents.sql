@@ -12,3 +12,7 @@ LIMIT 1;
 SELECT * FROM documents
 WHERE case_id = $1
 ORDER BY created_at ASC;
+
+-- name: CountDocumentsByCaseID :one
+SELECT COUNT(*) FROM documents
+WHERE case_id = $1;

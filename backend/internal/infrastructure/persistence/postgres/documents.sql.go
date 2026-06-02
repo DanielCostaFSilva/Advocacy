@@ -12,6 +12,18 @@ import (
 	"github.com/google/uuid"
 )
 
+const countDocumentsByCaseID = `-- name: CountDocumentsByCaseID :one
+SELECT COUNT(*) FROM documents
+WHERE case_id = $1
+`
+
+func (q *Queries) CountDocumentsByCaseID(ctx context.Context, caseID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countDocumentsByCaseID, caseID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createDocument = `-- name: CreateDocument :one
 INSERT INTO documents (case_id, name, description, type, file_name, mime_type, file_size, storage_key)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
