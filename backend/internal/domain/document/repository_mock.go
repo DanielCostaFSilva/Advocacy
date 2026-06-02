@@ -7,9 +7,10 @@ import (
 )
 
 type MockRepository struct {
-	CreateFunc      func(ctx context.Context, document *Document) error
-	FindByIDFunc    func(ctx context.Context, id uuid.UUID) (*Document, error)
-	ListByCaseIDFunc func(ctx context.Context, caseID uuid.UUID) ([]Document, error)
+	CreateFunc              func(ctx context.Context, document *Document) error
+	FindByIDFunc            func(ctx context.Context, id uuid.UUID) (*Document, error)
+	ListByCaseIDFunc        func(ctx context.Context, caseID uuid.UUID) ([]Document, error)
+	ListByCaseIDPaginatedFunc func(ctx context.Context, params ListDocumentsParams) ([]Document, int64, error)
 }
 
 func (m *MockRepository) Create(ctx context.Context, document *Document) error {
@@ -31,4 +32,11 @@ func (m *MockRepository) ListByCaseID(ctx context.Context, caseID uuid.UUID) ([]
 		return m.ListByCaseIDFunc(ctx, caseID)
 	}
 	return nil, nil
+}
+
+func (m *MockRepository) ListByCaseIDPaginated(ctx context.Context, params ListDocumentsParams) ([]Document, int64, error) {
+	if m.ListByCaseIDPaginatedFunc != nil {
+		return m.ListByCaseIDPaginatedFunc(ctx, params)
+	}
+	return nil, 0, nil
 }

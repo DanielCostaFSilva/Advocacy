@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	domain "legalflow/internal/domain/document"
@@ -67,6 +69,77 @@ func (r *DocumentRepository) ListByCaseID(ctx context.Context, caseID uuid.UUID)
 		docs[i] = *toDocumentDomain(row)
 	}
 	return docs, nil
+}
+
+func (r *DocumentRepository) ListByCaseIDPaginated(ctx context.Context, params domain.ListDocumentsParams) ([]domain.Document, int64, error) {
+	var conditions []string
+	var args []any
+	argIdx := 1
+
+	if params.CaseID != "" {
+		conditions = append(conditions, fmt.Sprintf("case_id = $%d", argIdx))
+		args = append(args, params.CaseID)
+		argIdx++
+	}
+	if params.Type != "" {
+		conditions = append(conditions, fmt.Sprintf("type = $%d", argIdx))
+		args = append(args, params.Type)
+		argIdx++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	sort := "created_at"
+	switch params.Sort {
+	case "name":
+		sort = "name"
+	case "type":
+		sort = "type"
+	case "created_at":
+		sort = "created_at"
+	case "file_size":
+		sort = "file_size"
+	}
+
+	order := "asc"
+	if params.Order == "desc" {
+		order = "desc"
+	}
+
+	query := fmt.Sprintf(
+		"SELECT id, case_id, name, description, type, file_name, mime_type, file_size, storage_key, created_at, updated_at FROM documents %s ORDER BY %s %s LIMIT $%d OFFSET $%d",
+		whereClause, sort, order, argIdx, argIdx+1,
+	)
+	args = append(args, params.Limit, params.Offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var documents []domain.Document
+	for rows.Next() {
+		var d Document
+		if err := rows.Scan(&d.ID, &d.CaseID, &d.Name, &d.Description, &d.Type, &d.FileName, &d.MimeType, &d.FileSize, &d.StorageKey, &d.CreatedAt, &d.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		documents = append(documents, *toDocumentDomain(d))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	var total int64
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM documents %s", whereClause)
+	if err := r.db.QueryRowContext(ctx, countQuery, args[:len(args)-2]...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	return documents, total, nil
 }
 
 func toDocumentDomain(d Document) *domain.Document {
