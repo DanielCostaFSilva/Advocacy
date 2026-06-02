@@ -1,5 +1,10 @@
 package legalcase
 
+type UpdateCaseStatusInput struct {
+	CaseID string
+	Status string
+}
+
 type GetCaseByIDInput struct {
 	ID string
 }

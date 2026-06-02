@@ -66,3 +66,49 @@ func TestNewCase_ShouldReturnErrInvalidClientIDWhenNil(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorIs(t, err, ErrInvalidClientID)
 }
+
+func TestChangeStatus_DraftToActive_ShouldSucceed(t *testing.T) {
+	c, _ := NewCase(uuid.New(), "ABC-12345", "Title Case", "Desc", "TJSP")
+	err := c.ChangeStatus(CaseStatusActive)
+	require.NoError(t, err)
+	assert.Equal(t, CaseStatusActive, c.Status)
+}
+
+func TestChangeStatus_DraftToSuspended_ShouldReturnError(t *testing.T) {
+	c, _ := NewCase(uuid.New(), "ABC-12345", "Title Case", "Desc", "TJSP")
+	err := c.ChangeStatus(CaseStatusSuspended)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrInvalidStatusTransition)
+	assert.Equal(t, CaseStatusDraft, c.Status)
+}
+
+func TestChangeStatus_ClosedToAny_ShouldReturnError(t *testing.T) {
+	c, _ := NewCase(uuid.New(), "ABC-12345", "Title Case", "Desc", "TJSP")
+	c.Status = CaseStatusClosed
+	err := c.ChangeStatus(CaseStatusActive)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrInvalidStatusTransition)
+	assert.Equal(t, CaseStatusClosed, c.Status)
+}
+
+func TestChangeStatus_SuspendedToClosed_ShouldSucceed(t *testing.T) {
+	c, _ := NewCase(uuid.New(), "ABC-12345", "Title Case", "Desc", "TJSP")
+	c.Status = CaseStatusSuspended
+	err := c.ChangeStatus(CaseStatusClosed)
+	require.NoError(t, err)
+	assert.Equal(t, CaseStatusClosed, c.Status)
+}
+
+func TestChangeStatus_InvalidStatus_ShouldReturnError(t *testing.T) {
+	c, _ := NewCase(uuid.New(), "ABC-12345", "Title Case", "Desc", "TJSP")
+	err := c.ChangeStatus("invalid")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrInvalidStatus)
+}
+
+func TestChangeStatus_SameStatus_ShouldSucceed(t *testing.T) {
+	c, _ := NewCase(uuid.New(), "ABC-12345", "Title Case", "Desc", "TJSP")
+	err := c.ChangeStatus(CaseStatusDraft)
+	require.NoError(t, err)
+	assert.Equal(t, CaseStatusDraft, c.Status)
+}

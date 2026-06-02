@@ -21,4 +21,5 @@ type CaseRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*Case, error)
 	FindByNumber(ctx context.Context, number string) (*Case, error)
 	List(ctx context.Context, params ListCasesParams) ([]Case, int64, error)
+	UpdateStatus(ctx context.Context, id uuid.UUID, status CaseStatus) error
 }

@@ -23,6 +23,14 @@ type Case struct {
 	UpdatedAt   time.Time
 }
 
+type CaseStatusHistory struct {
+	ID        uuid.UUID
+	CaseID    uuid.UUID
+	OldStatus sql.NullString
+	NewStatus string
+	CreatedAt time.Time
+}
+
 type Client struct {
 	ID        uuid.UUID
 	Name      string

@@ -12,3 +12,8 @@ LIMIT 1;
 SELECT * FROM cases
 WHERE number = $1
 LIMIT 1;
+
+-- name: UpdateCaseStatus :exec
+UPDATE cases
+SET status = $2, updated_at = NOW()
+WHERE id = $1;

@@ -266,6 +266,53 @@ func TestCaseRepository_List_ShouldSortByTitleDesc(t *testing.T) {
 	assert.Equal(t, "Alpha", cases[1].Title)
 }
 
+func TestCaseRepository_UpdateStatus_ShouldPersist(t *testing.T) {
+	db := connectDB(t)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+
+	c, _ := domain.NewCase(client.ID, "STAT-001", "Status Update", "Desc", "TJSP")
+	require.NoError(t, caseRepo.Create(ctx, c))
+	assert.Equal(t, domain.CaseStatusDraft, c.Status)
+
+	err := caseRepo.UpdateStatus(ctx, c.ID, domain.CaseStatusActive)
+	require.NoError(t, err)
+
+	updated, err := caseRepo.FindByID(ctx, c.ID)
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+	assert.Equal(t, domain.CaseStatusActive, updated.Status)
+	assert.True(t, updated.UpdatedAt.After(c.UpdatedAt))
+}
+
+func TestCaseRepository_UpdateStatus_ShouldAllowMultipleUpdates(t *testing.T) {
+	db := connectDB(t)
+	caseRepo := NewCaseRepository(db)
+	clientRepo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupCases(t, db)
+	cleanupClients(t, db)
+	client := createTestClient(t, clientRepo, ctx)
+
+	c, _ := domain.NewCase(client.ID, "STAT-002", "Multiple Updates", "Desc", "TJSP")
+	require.NoError(t, caseRepo.Create(ctx, c))
+
+	require.NoError(t, caseRepo.UpdateStatus(ctx, c.ID, domain.CaseStatusActive))
+	require.NoError(t, caseRepo.UpdateStatus(ctx, c.ID, domain.CaseStatusSuspended))
+	require.NoError(t, caseRepo.UpdateStatus(ctx, c.ID, domain.CaseStatusClosed))
+
+	updated, err := caseRepo.FindByID(ctx, c.ID)
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+	assert.Equal(t, domain.CaseStatusClosed, updated.Status)
+}
+
 func TestCaseRepository_List_ShouldPaginate(t *testing.T) {
 	db := connectDB(t)
 	caseRepo := NewCaseRepository(db)

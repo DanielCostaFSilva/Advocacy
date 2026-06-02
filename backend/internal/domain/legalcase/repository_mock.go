@@ -11,6 +11,7 @@ type MockCaseRepository struct {
 	FindByIDFunc     func(ctx context.Context, id uuid.UUID) (*Case, error)
 	FindByNumberFunc func(ctx context.Context, number string) (*Case, error)
 	ListFunc         func(ctx context.Context, params ListCasesParams) ([]Case, int64, error)
+	UpdateStatusFunc func(ctx context.Context, id uuid.UUID, status CaseStatus) error
 }
 
 func (m *MockCaseRepository) Create(ctx context.Context, legalCase *Case) error {
@@ -32,6 +33,13 @@ func (m *MockCaseRepository) List(ctx context.Context, params ListCasesParams) (
 		return m.ListFunc(ctx, params)
 	}
 	return nil, 0, nil
+}
+
+func (m *MockCaseRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status CaseStatus) error {
+	if m.UpdateStatusFunc != nil {
+		return m.UpdateStatusFunc(ctx, id, status)
+	}
+	return nil
 }
 
 func (m *MockCaseRepository) FindByNumber(ctx context.Context, number string) (*Case, error) {

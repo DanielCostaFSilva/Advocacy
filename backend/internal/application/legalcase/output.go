@@ -20,6 +20,11 @@ type ListCasesOutput struct {
 	TotalPages int
 }
 
+type UpdateCaseStatusOutput struct {
+	ID     string
+	Status string
+}
+
 type GetCaseByIDOutput struct {
 	ID          string
 	ClientID    string

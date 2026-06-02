@@ -95,3 +95,19 @@ func (q *Queries) GetCaseByNumber(ctx context.Context, number string) (Case, err
 	)
 	return i, err
 }
+
+const updateCaseStatus = `-- name: UpdateCaseStatus :exec
+UPDATE cases
+SET status = $2, updated_at = NOW()
+WHERE id = $1
+`
+
+type UpdateCaseStatusParams struct {
+	ID     uuid.UUID
+	Status string
+}
+
+func (q *Queries) UpdateCaseStatus(ctx context.Context, arg UpdateCaseStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateCaseStatus, arg.ID, arg.Status)
+	return err
+}

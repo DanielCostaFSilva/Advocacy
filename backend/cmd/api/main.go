@@ -95,6 +95,9 @@ func main() {
 		getCase := appCase.NewGetCaseByIDUseCase(caseRepo)
 		getCaseHandler := httpCase.NewGetHandler(getCase)
 
+		updateCaseStatus := appCase.NewUpdateCaseStatusUseCase(caseRepo)
+		statusHandler := httpCase.NewStatusHandler(updateCaseStatus)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -107,6 +110,7 @@ func main() {
 			caseHandler.Register(r)
 			listCasesHandler.Register(r)
 			getCaseHandler.Register(r)
+			statusHandler.Register(r)
 		})
 	}
 

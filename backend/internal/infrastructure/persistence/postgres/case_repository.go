@@ -136,6 +136,13 @@ func (r *CaseRepository) FindByNumber(ctx context.Context, number string) (*doma
 	return toCaseDomain(result), nil
 }
 
+func (r *CaseRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status domain.CaseStatus) error {
+	return r.q.UpdateCaseStatus(ctx, UpdateCaseStatusParams{
+		ID:     id,
+		Status: string(status),
+	})
+}
+
 func toCaseDomain(c Case) *domain.Case {
 	return &domain.Case{
 		ID:          c.ID,

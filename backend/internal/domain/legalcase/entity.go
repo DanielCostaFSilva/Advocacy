@@ -27,6 +27,42 @@ type Case struct {
 	UpdatedAt   time.Time
 }
 
+var validTransitions = map[CaseStatus]map[CaseStatus]bool{
+	CaseStatusDraft: {
+		CaseStatusActive: true,
+		CaseStatusDraft:  true,
+	},
+	CaseStatusActive: {
+		CaseStatusSuspended: true,
+		CaseStatusClosed:    true,
+		CaseStatusActive:    true,
+	},
+	CaseStatusSuspended: {
+		CaseStatusActive: true,
+		CaseStatusClosed: true,
+		CaseStatusSuspended: true,
+	},
+	CaseStatusClosed: {
+		CaseStatusClosed: true,
+	},
+}
+
+func (c *Case) ChangeStatus(newStatus CaseStatus) error {
+	switch newStatus {
+	case CaseStatusDraft, CaseStatusActive, CaseStatusSuspended, CaseStatusClosed:
+	default:
+		return ErrInvalidStatus
+	}
+
+	if !validTransitions[c.Status][newStatus] {
+		return ErrInvalidStatusTransition
+	}
+
+	c.Status = newStatus
+	c.UpdatedAt = time.Now()
+	return nil
+}
+
 func NewCase(clientID uuid.UUID, number, title, description, court string) (*Case, error) {
 	if clientID == uuid.Nil {
 		return nil, ErrInvalidClientID
