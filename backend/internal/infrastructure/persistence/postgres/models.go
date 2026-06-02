@@ -9,7 +9,28 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
+
+type Case struct {
+	ID          uuid.UUID
+	ClientID    uuid.UUID
+	Number      string
+	Title       string
+	Description string
+	Court       string
+	Status      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type CaseStatusHistory struct {
+	ID        uuid.UUID
+	CaseID    uuid.UUID
+	OldStatus sql.NullString
+	NewStatus string
+	CreatedAt time.Time
+}
 
 type Client struct {
 	ID        uuid.UUID
@@ -20,6 +41,15 @@ type Client struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt sql.NullTime
+}
+
+type TimelineEvent struct {
+	ID          uuid.UUID
+	CaseID      uuid.UUID
+	Type        string
+	Description string
+	Metadata    pqtype.NullRawMessage
+	CreatedAt   time.Time
 }
 
 type User struct {
