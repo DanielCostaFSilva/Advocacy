@@ -347,7 +347,9 @@ func TestCaseRepository_List_ShouldPaginate(t *testing.T) {
 
 func cleanupCases(t *testing.T, db *sql.DB) {
 	t.Helper()
-	_, err := db.Exec("DELETE FROM timeline_events")
+	_, err := db.Exec("DELETE FROM documents")
+	require.NoError(t, err)
+	_, err = db.Exec("DELETE FROM timeline_events")
 	require.NoError(t, err)
 	_, err = db.Exec("DELETE FROM case_status_history")
 	require.NoError(t, err)
