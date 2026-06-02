@@ -10,7 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 	clientdomain "legalflow/internal/domain/client"
 	casedomain "legalflow/internal/domain/legalcase"
+	timelinedomain "legalflow/internal/domain/timeline"
 )
+
+type mockTimelineRepo struct{}
+
+func (m *mockTimelineRepo) Create(ctx context.Context, event *timelinedomain.TimelineEvent) error {
+	return nil
+}
 
 func TestCreateCase_ShouldSucceedWhenValidInput(t *testing.T) {
 	clientID := uuid.New()
@@ -28,7 +35,7 @@ func TestCreateCase_ShouldSucceedWhenValidInput(t *testing.T) {
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID:    clientID.String(),
 		Number:      "ABC-12345",
@@ -61,7 +68,7 @@ func TestCreateCase_ShouldReturnErrCaseAlreadyExistsWhenDuplicateNumber(t *testi
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID: clientID.String(),
 		Number:   "ABC-12345",
@@ -83,7 +90,7 @@ func TestCreateCase_ShouldReturnErrClientNotFoundWhenClientNotExists(t *testing.
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID: clientID.String(),
 		Number:   "ABC-12345",
@@ -100,7 +107,7 @@ func TestCreateCase_ShouldReturnErrInvalidClientIDWhenInvalidUUID(t *testing.T) 
 	caseRepo := &casedomain.MockCaseRepository{}
 	clientRepo := &clientdomain.MockClientRepository{}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID: "not-a-uuid",
 		Number:   "ABC-12345",
@@ -126,7 +133,7 @@ func TestCreateCase_ShouldReturnErrorWhenCaseDataInvalid(t *testing.T) {
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID: clientID.String(),
 		Number:   "AB",
@@ -154,7 +161,7 @@ func TestCreateCase_ShouldReturnErrorWhenRepoCreateFails(t *testing.T) {
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID: clientID.String(),
 		Number:   "ABC-12345",
@@ -180,7 +187,7 @@ func TestCreateCase_ShouldReturnErrorWhenCaseRepoCheckFails(t *testing.T) {
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID: clientID.String(),
 		Number:   "ABC-12345",
@@ -202,7 +209,7 @@ func TestCreateCase_ShouldReturnErrorWhenClientRepoFails(t *testing.T) {
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID: clientID.String(),
 		Number:   "ABC-12345",
@@ -233,7 +240,7 @@ func TestCreateCase_ShouldInvokeRepoCreateWithCorrectData(t *testing.T) {
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID:    clientID.String(),
 		Number:      "ABC-12345",
@@ -269,7 +276,7 @@ func TestCreateCase_ShouldReturnStatusDraft(t *testing.T) {
 		},
 	}
 
-	uc := NewCreateCaseUseCase(caseRepo, clientRepo)
+	uc := NewCreateCaseUseCase(caseRepo, clientRepo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), CreateCaseInput{
 		ClientID: clientID.String(),
 		Number:   "ABC-12345",

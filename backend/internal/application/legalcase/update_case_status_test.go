@@ -27,7 +27,7 @@ func TestUpdateCaseStatus_ShouldUpdateSuccessfully(t *testing.T) {
 		},
 	}
 
-	uc := NewUpdateCaseStatusUseCase(repo)
+	uc := NewUpdateCaseStatusUseCase(repo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), UpdateCaseStatusInput{
 		CaseID: caseID.String(),
 		Status: "active",
@@ -40,7 +40,7 @@ func TestUpdateCaseStatus_ShouldUpdateSuccessfully(t *testing.T) {
 }
 
 func TestUpdateCaseStatus_ShouldReturnErrInvalidCaseID(t *testing.T) {
-	uc := NewUpdateCaseStatusUseCase(&domain.MockCaseRepository{})
+	uc := NewUpdateCaseStatusUseCase(&domain.MockCaseRepository{}, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), UpdateCaseStatusInput{
 		CaseID: "not-a-uuid",
 		Status: "active",
@@ -52,7 +52,7 @@ func TestUpdateCaseStatus_ShouldReturnErrInvalidCaseID(t *testing.T) {
 }
 
 func TestUpdateCaseStatus_ShouldReturnErrInvalidStatus(t *testing.T) {
-	uc := NewUpdateCaseStatusUseCase(&domain.MockCaseRepository{})
+	uc := NewUpdateCaseStatusUseCase(&domain.MockCaseRepository{}, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), UpdateCaseStatusInput{
 		CaseID: uuid.New().String(),
 		Status: "invalid",
@@ -70,7 +70,7 @@ func TestUpdateCaseStatus_ShouldReturnErrCaseNotFound(t *testing.T) {
 		},
 	}
 
-	uc := NewUpdateCaseStatusUseCase(repo)
+	uc := NewUpdateCaseStatusUseCase(repo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), UpdateCaseStatusInput{
 		CaseID: uuid.New().String(),
 		Status: "active",
@@ -92,10 +92,10 @@ func TestUpdateCaseStatus_ShouldReturnErrInvalidStatusTransition(t *testing.T) {
 		},
 	}
 
-	uc := NewUpdateCaseStatusUseCase(repo)
+	uc := NewUpdateCaseStatusUseCase(repo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), UpdateCaseStatusInput{
 		CaseID: caseID.String(),
-		Status: "suspended",
+	Status: "suspended",
 	})
 
 	require.Error(t, err)
@@ -117,7 +117,7 @@ func TestUpdateCaseStatus_ShouldReturnErrorWhenRepoFails(t *testing.T) {
 		},
 	}
 
-	uc := NewUpdateCaseStatusUseCase(repo)
+	uc := NewUpdateCaseStatusUseCase(repo, &mockTimelineRepo{})
 	output, err := uc.Execute(context.Background(), UpdateCaseStatusInput{
 		CaseID: caseID.String(),
 		Status: "active",

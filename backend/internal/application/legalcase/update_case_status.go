@@ -2,17 +2,23 @@ package legalcase
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	domain "legalflow/internal/domain/legalcase"
+	timelinedomain "legalflow/internal/domain/timeline"
 )
 
 type UpdateCaseStatusUseCase struct {
-	repo domain.CaseRepository
+	repo         domain.CaseRepository
+	timelineRepo TimelineEventCreator
 }
 
-func NewUpdateCaseStatusUseCase(repo domain.CaseRepository) *UpdateCaseStatusUseCase {
-	return &UpdateCaseStatusUseCase{repo: repo}
+func NewUpdateCaseStatusUseCase(repo domain.CaseRepository, timelineRepo TimelineEventCreator) *UpdateCaseStatusUseCase {
+	return &UpdateCaseStatusUseCase{
+		repo:         repo,
+		timelineRepo: timelineRepo,
+	}
 }
 
 func (uc *UpdateCaseStatusUseCase) Execute(ctx context.Context, input UpdateCaseStatusInput) (*UpdateCaseStatusOutput, error) {
@@ -36,6 +42,8 @@ func (uc *UpdateCaseStatusUseCase) Execute(ctx context.Context, input UpdateCase
 		return nil, ErrCaseNotFound
 	}
 
+	oldStatus := c.Status
+
 	if err := c.ChangeStatus(newStatus); err != nil {
 		if err == domain.ErrInvalidStatus {
 			return nil, ErrInvalidStatus
@@ -47,6 +55,11 @@ func (uc *UpdateCaseStatusUseCase) Execute(ctx context.Context, input UpdateCase
 	}
 
 	if err := uc.repo.UpdateStatus(ctx, c.ID, c.Status); err != nil {
+		return nil, err
+	}
+
+	event := timelinedomain.NewEvent(c.ID, timelinedomain.EventStatusChanged, fmt.Sprintf("Status alterado de %s para %s", oldStatus, c.Status))
+	if err := uc.timelineRepo.Create(ctx, event); err != nil {
 		return nil, err
 	}
 

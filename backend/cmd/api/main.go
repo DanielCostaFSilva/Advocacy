@@ -7,6 +7,7 @@ import (
 	appAuth "legalflow/internal/application/auth"
 	appCase "legalflow/internal/application/legalcase"
 	appClient "legalflow/internal/application/client"
+	appTimeline "legalflow/internal/application/timeline"
 	"legalflow/internal/application/user"
 	"legalflow/internal/config"
 	"legalflow/internal/database"
@@ -14,6 +15,7 @@ import (
 	httpAuth 	"legalflow/internal/http/auth"
 	httpClient "legalflow/internal/http/client"
 	httpCase "legalflow/internal/http/legalcase"
+	httpTimeline "legalflow/internal/http/timeline"
 	httpuser "legalflow/internal/http/user"
 	"legalflow/internal/infrastructure/auth"
 	"legalflow/internal/infrastructure/hasher"
@@ -86,7 +88,8 @@ func main() {
 		deleteHandler := httpClient.NewDeleteHandler(deleteClient)
 
 		caseRepo := postgres.NewCaseRepository(db)
-		createCase := appCase.NewCreateCaseUseCase(caseRepo, clientRepo)
+		timelineRepo := postgres.NewTimelineRepository(db)
+		createCase := appCase.NewCreateCaseUseCase(caseRepo, clientRepo, timelineRepo)
 		caseHandler := httpCase.NewHandler(createCase)
 
 		listCases := appCase.NewListCasesUseCase(caseRepo)
@@ -95,8 +98,11 @@ func main() {
 		getCase := appCase.NewGetCaseByIDUseCase(caseRepo)
 		getCaseHandler := httpCase.NewGetHandler(getCase)
 
-		updateCaseStatus := appCase.NewUpdateCaseStatusUseCase(caseRepo)
+		updateCaseStatus := appCase.NewUpdateCaseStatusUseCase(caseRepo, timelineRepo)
 		statusHandler := httpCase.NewStatusHandler(updateCaseStatus)
+
+		getCaseTimeline := appTimeline.NewGetCaseTimelineUseCase(timelineRepo, caseRepo)
+		timelineHandler := httpTimeline.NewHandler(getCaseTimeline)
 
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
@@ -111,6 +117,7 @@ func main() {
 			listCasesHandler.Register(r)
 			getCaseHandler.Register(r)
 			statusHandler.Register(r)
+			timelineHandler.Register(r)
 		})
 	}
 

@@ -2,21 +2,29 @@ package legalcase
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	clientdomain "legalflow/internal/domain/client"
 	casedomain "legalflow/internal/domain/legalcase"
+	timelinedomain "legalflow/internal/domain/timeline"
 )
 
-type CreateCaseUseCase struct {
-	caseRepo   casedomain.CaseRepository
-	clientRepo clientdomain.ClientRepository
+type TimelineEventCreator interface {
+	Create(ctx context.Context, event *timelinedomain.TimelineEvent) error
 }
 
-func NewCreateCaseUseCase(caseRepo casedomain.CaseRepository, clientRepo clientdomain.ClientRepository) *CreateCaseUseCase {
+type CreateCaseUseCase struct {
+	caseRepo      casedomain.CaseRepository
+	clientRepo    clientdomain.ClientRepository
+	timelineRepo  TimelineEventCreator
+}
+
+func NewCreateCaseUseCase(caseRepo casedomain.CaseRepository, clientRepo clientdomain.ClientRepository, timelineRepo TimelineEventCreator) *CreateCaseUseCase {
 	return &CreateCaseUseCase{
-		caseRepo:   caseRepo,
-		clientRepo: clientRepo,
+		caseRepo:      caseRepo,
+		clientRepo:    clientRepo,
+		timelineRepo:  timelineRepo,
 	}
 }
 
@@ -48,6 +56,11 @@ func (uc *CreateCaseUseCase) Execute(ctx context.Context, input CreateCaseInput)
 	}
 
 	if err := uc.caseRepo.Create(ctx, c); err != nil {
+		return nil, err
+	}
+
+	event := timelinedomain.NewEvent(c.ID, timelinedomain.EventCaseCreated, fmt.Sprintf("Processo %s criado", c.Number))
+	if err := uc.timelineRepo.Create(ctx, event); err != nil {
 		return nil, err
 	}
 
