@@ -13,3 +13,7 @@ func (h *ListHandler) Register(r chi.Router) {
 func (h *GetHandler) Register(r chi.Router) {
 	r.Get("/clients/{id}", h.Get)
 }
+
+func (h *UpdateHandler) Register(r chi.Router) {
+	r.Put("/clients/{id}", h.Update)
+}

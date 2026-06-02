@@ -65,6 +65,23 @@ func (r *ClientRepository) FindByCPF(ctx context.Context, cpf string) (*domain.C
 	return toClientDomain(result), nil
 }
 
+func (r *ClientRepository) Update(ctx context.Context, client *domain.Client) error {
+	params := UpdateClientParams{
+		ID:    client.ID,
+		Name:  client.Name,
+		Email: client.Email,
+		Phone: client.Phone,
+	}
+
+	updated, err := r.q.UpdateClient(ctx, params)
+	if err != nil {
+		return err
+	}
+
+	client.UpdatedAt = updated.UpdatedAt
+	return nil
+}
+
 func (r *ClientRepository) List(ctx context.Context, params domain.ListClientsParams) ([]domain.Client, int64, error) {
 	var conditions []string
 	var args []any

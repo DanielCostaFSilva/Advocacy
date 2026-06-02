@@ -10,6 +10,14 @@ type CreateClientOutput struct {
 	Phone string
 }
 
+type UpdateClientOutput struct {
+	ID    string
+	Name  string
+	CPF   string
+	Email string
+	Phone string
+}
+
 type GetClientByIDOutput struct {
 	ID        string
 	Name      string

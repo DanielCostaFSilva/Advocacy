@@ -50,6 +50,22 @@ func NewClient(name, cpf, email, phone string) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) Update(name, email, phone string) error {
+	if len(name) < 3 {
+		return ErrInvalidName
+	}
+	if email != "" {
+		if _, err := mail.ParseAddress(email); err != nil {
+			return ErrInvalidEmail
+		}
+	}
+	c.Name = name
+	c.Email = email
+	c.Phone = phone
+	c.UpdatedAt = time.Now()
+	return nil
+}
+
 func normalizeCPF(cpf string) string {
 	return strings.Join(cpfDigits.FindAllString(cpf, -1), "")
 }

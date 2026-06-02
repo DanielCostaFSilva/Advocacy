@@ -7,6 +7,13 @@ type CreateClientInput struct {
 	Phone string
 }
 
+type UpdateClientInput struct {
+	ID    string
+	Name  string
+	Email string
+	Phone string
+}
+
 type GetClientByIDInput struct {
 	ID string
 }
