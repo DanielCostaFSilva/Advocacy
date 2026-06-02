@@ -1,0 +1,75 @@
+package postgres
+
+import (
+	"context"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	domain "legalflow/internal/domain/client"
+)
+
+func TestClientRepository_Create_ShouldSaveSuccessfully(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	client, err := domain.NewClient("Jane Doe", "11122233344", "jane@example.com", "11999999999")
+	require.NoError(t, err)
+
+	err = repo.Create(ctx, client)
+	require.NoError(t, err)
+	assert.NotEmpty(t, client.ID)
+}
+
+func TestClientRepository_Create_ShouldReturnDuplicateCPFError(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	client1, err := domain.NewClient("John Doe", "99988877766", "john@example.com", "11999999999")
+	require.NoError(t, err)
+	err = repo.Create(ctx, client1)
+	require.NoError(t, err)
+
+	client2, err := domain.NewClient("Jane Doe", "99988877766", "jane@example.com", "11988888888")
+	require.NoError(t, err)
+	err = repo.Create(ctx, client2)
+	require.Error(t, err)
+}
+
+func TestClientRepository_FindByCPF_ShouldReturnClient(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	original, err := domain.NewClient("Find CPF", "55544433322", "findcpf@example.com", "11999999999")
+	require.NoError(t, err)
+	err = repo.Create(ctx, original)
+	require.NoError(t, err)
+
+	found, err := repo.FindByCPF(ctx, "55544433322")
+	require.NoError(t, err)
+	require.NotNil(t, found)
+	assert.Equal(t, original.ID, found.ID)
+	assert.Equal(t, "Find CPF", found.Name)
+	assert.Equal(t, "55544433322", found.CPF)
+}
+
+func TestClientRepository_FindByID_ShouldReturnClient(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	original, err := domain.NewClient("Find ID", "66677788899", "findid@example.com", "11999999999")
+	require.NoError(t, err)
+	err = repo.Create(ctx, original)
+	require.NoError(t, err)
+
+	found, err := repo.FindByID(ctx, original.ID)
+	require.NoError(t, err)
+	require.NotNil(t, found)
+	assert.Equal(t, original.ID, found.ID)
+	assert.Equal(t, "Find ID", found.Name)
+	assert.Equal(t, "66677788899", found.CPF)
+}
