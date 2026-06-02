@@ -20,6 +20,10 @@ frontend/*.log
 .env.local
 *.env
 
+# Tasks
+Tasks/
+open.MD
+
 # IDE
 .vscode/
 .idea/
