@@ -43,6 +43,20 @@ type Client struct {
 	DeletedAt sql.NullTime
 }
 
+type Document struct {
+	ID          uuid.UUID
+	CaseID      uuid.UUID
+	Name        string
+	Description sql.NullString
+	Type        string
+	FileName    string
+	MimeType    string
+	FileSize    int64
+	StorageKey  string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
 type Hearing struct {
 	ID          uuid.UUID
 	CaseID      uuid.UUID
