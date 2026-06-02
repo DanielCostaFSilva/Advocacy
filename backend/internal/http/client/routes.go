@@ -17,3 +17,7 @@ func (h *GetHandler) Register(r chi.Router) {
 func (h *UpdateHandler) Register(r chi.Router) {
 	r.Put("/clients/{id}", h.Update)
 }
+
+func (h *DeleteHandler) Register(r chi.Router) {
+	r.Delete("/clients/{id}", h.Delete)
+}

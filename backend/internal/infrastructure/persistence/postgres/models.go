@@ -5,6 +5,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ type Client struct {
 	Phone     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	DeletedAt sql.NullTime
 }
 
 type User struct {

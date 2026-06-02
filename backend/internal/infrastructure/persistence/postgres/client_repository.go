@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	domain "legalflow/internal/domain/client"
@@ -82,6 +83,10 @@ func (r *ClientRepository) Update(ctx context.Context, client *domain.Client) er
 	return nil
 }
 
+func (r *ClientRepository) SoftDelete(ctx context.Context, id uuid.UUID) error {
+	return r.q.SoftDeleteClient(ctx, id)
+}
+
 func (r *ClientRepository) List(ctx context.Context, params domain.ListClientsParams) ([]domain.Client, int64, error) {
 	var conditions []string
 	var args []any
@@ -100,7 +105,9 @@ func (r *ClientRepository) List(ctx context.Context, params domain.ListClientsPa
 
 	whereClause := ""
 	if len(conditions) > 0 {
-		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+		whereClause = "WHERE " + strings.Join(conditions, " AND ") + " AND deleted_at IS NULL"
+	} else {
+		whereClause = "WHERE deleted_at IS NULL"
 	}
 
 	sort := "name"
@@ -113,7 +120,7 @@ func (r *ClientRepository) List(ctx context.Context, params domain.ListClientsPa
 		order = "desc"
 	}
 
-	query := fmt.Sprintf("SELECT id, name, cpf, email, phone, created_at, updated_at FROM clients %s ORDER BY %s %s LIMIT $%d OFFSET $%d",
+	query := fmt.Sprintf("SELECT id, name, cpf, email, phone, created_at, updated_at, deleted_at FROM clients %s ORDER BY %s %s LIMIT $%d OFFSET $%d",
 		whereClause, sort, order, argIdx, argIdx+1)
 	args = append(args, params.Limit, params.Offset)
 
@@ -126,7 +133,7 @@ func (r *ClientRepository) List(ctx context.Context, params domain.ListClientsPa
 	var clients []domain.Client
 	for rows.Next() {
 		var c Client
-		if err := rows.Scan(&c.ID, &c.Name, &c.Cpf, &c.Email, &c.Phone, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.Cpf, &c.Email, &c.Phone, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt); err != nil {
 			return nil, 0, err
 		}
 		clients = append(clients, *toClientDomain(c))
@@ -145,6 +152,10 @@ func (r *ClientRepository) List(ctx context.Context, params domain.ListClientsPa
 }
 
 func toClientDomain(c Client) *domain.Client {
+	var deletedAt *time.Time
+	if c.DeletedAt.Valid {
+		deletedAt = &c.DeletedAt.Time
+	}
 	return &domain.Client{
 		ID:        c.ID,
 		Name:      c.Name,
@@ -153,5 +164,6 @@ func toClientDomain(c Client) *domain.Client {
 		Phone:     c.Phone,
 		CreatedAt: c.CreatedAt,
 		UpdatedAt: c.UpdatedAt,
+		DeletedAt: deletedAt,
 	}
 }

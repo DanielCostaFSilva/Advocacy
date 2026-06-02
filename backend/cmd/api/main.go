@@ -80,6 +80,9 @@ func main() {
 		updateClient := appClient.NewUpdateClientUseCase(clientRepo)
 		updateHandler := httpClient.NewUpdateHandler(updateClient)
 
+		deleteClient := appClient.NewDeleteClientUseCase(clientRepo)
+		deleteHandler := httpClient.NewDeleteHandler(deleteClient)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -88,6 +91,7 @@ func main() {
 			listHandler.Register(r)
 			getHandler.Register(r)
 			updateHandler.Register(r)
+			deleteHandler.Register(r)
 		})
 	}
 
