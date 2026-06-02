@@ -9,4 +9,5 @@ const (
 	EventHearingCreated     EventType = "HEARING_CREATED"
 	EventHearingRescheduled EventType = "HEARING_RESCHEDULED"
 	EventHearingCancelled   EventType = "HEARING_CANCELLED"
+	EventDocumentUploaded   EventType = "DOCUMENT_UPLOADED"
 )
