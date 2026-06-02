@@ -2,6 +2,7 @@ package hearing
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -51,7 +52,17 @@ func (uc *CreateHearingUseCase) Execute(ctx context.Context, input CreateHearing
 		return nil, err
 	}
 
-	event := timelineDomain.NewEvent(caseID, timelineDomain.EventHearingCreated, fmt.Sprintf("Audiência agendada: %s", input.Title))
+	meta := timelineDomain.HearingMetadata{
+		HearingID:   h.ID.String(),
+		Type:        string(h.Type),
+		ScheduledAt: h.ScheduledAt,
+	}
+	metaJSON, err := json.Marshal(meta)
+	if err != nil {
+		return nil, err
+	}
+
+	event := timelineDomain.NewEventWithMetadata(caseID, timelineDomain.EventHearingCreated, fmt.Sprintf("Audiência agendada: %s", input.Title), metaJSON)
 	if err := uc.timelineRepo.Create(ctx, event); err != nil {
 		return nil, err
 	}

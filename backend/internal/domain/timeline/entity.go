@@ -24,3 +24,9 @@ func NewEvent(caseID uuid.UUID, eventType EventType, description string) *Timeli
 		CreatedAt:   time.Now(),
 	}
 }
+
+func NewEventWithMetadata(caseID uuid.UUID, eventType EventType, description string, metadata []byte) *TimelineEvent {
+	event := NewEvent(caseID, eventType, description)
+	event.Metadata = metadata
+	return event
+}

@@ -2,6 +2,7 @@ package hearing
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
@@ -184,7 +185,7 @@ func TestCreateHearing_ShouldReturnErrorWhenTimelineRepoFails(t *testing.T) {
 
 func TestCreateHearing_ShouldCreateTimelineEvent(t *testing.T) {
 	caseID := uuid.New()
-	future := time.Now().Add(48 * time.Hour)
+	future := time.Now().UTC().Add(48 * time.Hour)
 	var capturedEvent *timelineDomain.TimelineEvent
 
 	uc := NewCreateHearingUseCase(
@@ -221,4 +222,12 @@ func TestCreateHearing_ShouldCreateTimelineEvent(t *testing.T) {
 	assert.Equal(t, timelineDomain.EventHearingCreated, capturedEvent.Type)
 	assert.Equal(t, caseID, capturedEvent.CaseID)
 	assert.Contains(t, capturedEvent.Description, "Audiência de Conciliação")
+	require.NotEmpty(t, capturedEvent.Metadata)
+
+	var meta timelineDomain.HearingMetadata
+	err = json.Unmarshal(capturedEvent.Metadata, &meta)
+	require.NoError(t, err)
+	assert.NotEmpty(t, meta.HearingID)
+	assert.Equal(t, "conciliation", meta.Type)
+	assert.True(t, future.Equal(meta.ScheduledAt))
 }
