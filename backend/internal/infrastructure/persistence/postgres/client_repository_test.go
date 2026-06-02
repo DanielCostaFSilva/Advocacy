@@ -258,6 +258,8 @@ func cleanupClients(t *testing.T, db *sql.DB) {
 	require.NoError(t, err)
 	_, err = db.Exec("DELETE FROM case_status_history")
 	require.NoError(t, err)
+	_, err = db.Exec("DELETE FROM hearings")
+	require.NoError(t, err)
 	_, err = db.Exec("DELETE FROM cases")
 	require.NoError(t, err)
 	_, err = db.Exec("DELETE FROM clients")

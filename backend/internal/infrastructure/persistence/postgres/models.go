@@ -43,6 +43,18 @@ type Client struct {
 	DeletedAt sql.NullTime
 }
 
+type Hearing struct {
+	ID          uuid.UUID
+	CaseID      uuid.UUID
+	Title       string
+	Description sql.NullString
+	Type        string
+	Location    string
+	ScheduledAt time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
 type TimelineEvent struct {
 	ID          uuid.UUID
 	CaseID      uuid.UUID
