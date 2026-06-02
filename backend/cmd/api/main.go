@@ -92,6 +92,9 @@ func main() {
 		listCases := appCase.NewListCasesUseCase(caseRepo)
 		listCasesHandler := httpCase.NewListHandler(listCases)
 
+		getCase := appCase.NewGetCaseByIDUseCase(caseRepo)
+		getCaseHandler := httpCase.NewGetHandler(getCase)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -103,6 +106,7 @@ func main() {
 			deleteHandler.Register(r)
 			caseHandler.Register(r)
 			listCasesHandler.Register(r)
+			getCaseHandler.Register(r)
 		})
 	}
 

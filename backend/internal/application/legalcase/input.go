@@ -1,5 +1,9 @@
 package legalcase
 
+type GetCaseByIDInput struct {
+	ID string
+}
+
 type ListCasesInput struct {
 	Page     int
 	PageSize int

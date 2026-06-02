@@ -20,6 +20,18 @@ type ListCasesOutput struct {
 	TotalPages int
 }
 
+type GetCaseByIDOutput struct {
+	ID          string
+	ClientID    string
+	Number      string
+	Title       string
+	Description string
+	Court       string
+	Status      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
 type CreateCaseOutput struct {
 	ID          string
 	ClientID    string
