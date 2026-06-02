@@ -103,3 +103,37 @@ func (q *Queries) GetClientByID(ctx context.Context, id uuid.UUID) (Client, erro
 	)
 	return i, err
 }
+
+const updateClient = `-- name: UpdateClient :one
+UPDATE clients
+SET name = $2, email = $3, phone = $4, updated_at = NOW()
+WHERE id = $1
+RETURNING id, name, cpf, email, phone, created_at, updated_at
+`
+
+type UpdateClientParams struct {
+	ID    uuid.UUID
+	Name  string
+	Email string
+	Phone string
+}
+
+func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error) {
+	row := q.db.QueryRowContext(ctx, updateClient,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.Phone,
+	)
+	var i Client
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Cpf,
+		&i.Email,
+		&i.Phone,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

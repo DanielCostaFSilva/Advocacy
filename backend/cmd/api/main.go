@@ -77,6 +77,9 @@ func main() {
 		getClient := appClient.NewGetClientByIDUseCase(clientRepo)
 		getHandler := httpClient.NewGetHandler(getClient)
 
+		updateClient := appClient.NewUpdateClientUseCase(clientRepo)
+		updateHandler := httpClient.NewUpdateHandler(updateClient)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -84,6 +87,7 @@ func main() {
 			clientHandler.Register(r)
 			listHandler.Register(r)
 			getHandler.Register(r)
+			updateHandler.Register(r)
 		})
 	}
 

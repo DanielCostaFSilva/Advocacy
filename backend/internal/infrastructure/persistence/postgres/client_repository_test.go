@@ -80,6 +80,31 @@ func TestClientRepository_FindByID_ShouldReturnClient(t *testing.T) {
 	assert.Equal(t, "66677788899", found.CPF)
 }
 
+func TestClientRepository_Update_ShouldSaveChanges(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupClients(t, db)
+	original, err := domain.NewClient("Maria Silva", "12345678900", "maria@example.com", "81999999999")
+	require.NoError(t, err)
+	err = repo.Create(ctx, original)
+	require.NoError(t, err)
+
+	require.NoError(t, original.Update("Maria da Silva", "maria.silva@example.com", "81988887777"))
+	err = repo.Update(ctx, original)
+	require.NoError(t, err)
+
+	found, err := repo.FindByID(ctx, original.ID)
+	require.NoError(t, err)
+	require.NotNil(t, found)
+	assert.Equal(t, "Maria da Silva", found.Name)
+	assert.Equal(t, "maria.silva@example.com", found.Email)
+	assert.Equal(t, "81988887777", found.Phone)
+	assert.Equal(t, "12345678900", found.CPF)
+	assert.True(t, found.UpdatedAt.After(found.CreatedAt))
+}
+
 func TestClientRepository_FindByID_ShouldReturnNilWhenNotFound(t *testing.T) {
 	db := connectDB(t)
 	repo := NewClientRepository(db)
