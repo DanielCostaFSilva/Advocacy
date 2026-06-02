@@ -80,6 +80,56 @@ func TestClientRepository_FindByID_ShouldReturnClient(t *testing.T) {
 	assert.Equal(t, "66677788899", found.CPF)
 }
 
+func TestClientRepository_SoftDelete_ShouldSetDeletedAt(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupClients(t, db)
+	client, err := domain.NewClient("Maria", "12345678900", "maria@example.com", "81999999999")
+	require.NoError(t, err)
+	err = repo.Create(ctx, client)
+	require.NoError(t, err)
+
+	err = repo.SoftDelete(ctx, client.ID)
+	require.NoError(t, err)
+
+	found, err := repo.FindByID(ctx, client.ID)
+	require.NoError(t, err)
+	assert.Nil(t, found)
+
+	_ = client
+}
+
+func TestClientRepository_SoftDelete_ShouldNotReturnDeletedInList(t *testing.T) {
+	db := connectDB(t)
+	repo := NewClientRepository(db)
+	ctx := context.Background()
+
+	cleanupClients(t, db)
+	active, err := domain.NewClient("Active", "11111111111", "active@example.com", "81999999999")
+	require.NoError(t, err)
+	err = repo.Create(ctx, active)
+	require.NoError(t, err)
+
+	deleted, err := domain.NewClient("Deleted", "22222222222", "deleted@example.com", "81999999999")
+	require.NoError(t, err)
+	err = repo.Create(ctx, deleted)
+	require.NoError(t, err)
+
+	err = repo.SoftDelete(ctx, deleted.ID)
+	require.NoError(t, err)
+
+	clients, total, err := repo.List(ctx, domain.ListClientsParams{
+		Offset: 0,
+		Limit:  10,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(clients))
+	assert.Equal(t, int64(1), total)
+	assert.Equal(t, "Active", clients[0].Name)
+}
+
 func TestClientRepository_Update_ShouldSaveChanges(t *testing.T) {
 	db := connectDB(t)
 	repo := NewClientRepository(db)

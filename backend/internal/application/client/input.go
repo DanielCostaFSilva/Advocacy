@@ -7,6 +7,10 @@ type CreateClientInput struct {
 	Phone string
 }
 
+type DeleteClientInput struct {
+	ID string
+}
+
 type UpdateClientInput struct {
 	ID    string
 	Name  string

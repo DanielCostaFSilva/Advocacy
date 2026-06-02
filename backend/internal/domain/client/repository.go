@@ -20,5 +20,6 @@ type ClientRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*Client, error)
 	FindByCPF(ctx context.Context, cpf string) (*Client, error)
 	Update(ctx context.Context, client *Client) error
+	SoftDelete(ctx context.Context, id uuid.UUID) error
 	List(ctx context.Context, params ListClientsParams) ([]Client, int64, error)
 }
