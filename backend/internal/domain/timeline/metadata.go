@@ -13,3 +13,8 @@ type DocumentMetadata struct {
 	DocumentType string `json:"document_type"`
 	FileName     string `json:"file_name"`
 }
+
+type DocumentDownloadMetadata struct {
+	DocumentID string `json:"document_id"`
+	FileName   string `json:"file_name"`
+}

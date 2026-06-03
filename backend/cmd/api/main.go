@@ -122,6 +122,9 @@ func main() {
 		listCaseDocuments := appDocument.NewListCaseDocumentsUseCase(docRepo, caseRepo)
 		listDocumentsHandler := httpDocument.NewListHandler(listCaseDocuments)
 
+		downloadDocument := appDocument.NewGetDocumentDownloadUseCase(docRepo, timelineRepo, appDocument.NewTemporaryDownloadURLProvider())
+		downloadHandler := httpDocument.NewDownloadHandler(downloadDocument)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -140,6 +143,7 @@ func main() {
 			hearingHandler.Register(r)
 			documentHandler.Register(r)
 			listDocumentsHandler.Register(r)
+			downloadHandler.Register(r)
 		})
 	}
 

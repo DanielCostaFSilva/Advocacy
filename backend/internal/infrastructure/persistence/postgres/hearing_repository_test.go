@@ -247,7 +247,7 @@ func TestHearingRepository_List_ShouldFilterByDateRange(t *testing.T) {
 	base := time.Now().Add(48 * time.Hour)
 	h1, _ := domain.NewHearing(c.ID, "Early", "Desc", domain.HearingTypeConciliation, "Local", base)
 	h2, _ := domain.NewHearing(c.ID, "Middle", "Desc", domain.HearingTypeConciliation, "Local", base.Add(24*time.Hour))
-	h3, _ := domain.NewHearing(c.ID, "Late", "Desc", domain.HearingTypeConciliation, "Local", base.Add(48*time.Hour))
+	h3, _ := domain.NewHearing(c.ID, "Latest", "Desc", domain.HearingTypeConciliation, "Local", base.Add(48*time.Hour))
 	require.NoError(t, hearingRepo.Create(ctx, h1))
 	require.NoError(t, hearingRepo.Create(ctx, h2))
 	require.NoError(t, hearingRepo.Create(ctx, h3))
@@ -281,7 +281,7 @@ func TestHearingRepository_List_ShouldSortByTitleDesc(t *testing.T) {
 
 	future := time.Now().Add(48 * time.Hour)
 	h1, _ := domain.NewHearing(c.ID, "Alpha", "Desc", domain.HearingTypeConciliation, "Local", future)
-	h2, _ := domain.NewHearing(c.ID, "Beta", "Desc", domain.HearingTypeConciliation, "Local", future.Add(1*time.Hour))
+	h2, _ := domain.NewHearing(c.ID, "Beta1", "Desc", domain.HearingTypeConciliation, "Local", future.Add(1*time.Hour))
 	require.NoError(t, hearingRepo.Create(ctx, h1))
 	require.NoError(t, hearingRepo.Create(ctx, h2))
 
@@ -294,7 +294,7 @@ func TestHearingRepository_List_ShouldSortByTitleDesc(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, hearings, 2)
 	assert.Equal(t, int64(2), total)
-	assert.Equal(t, "Beta", hearings[0].Title)
+	assert.Equal(t, "Beta1", hearings[0].Title)
 	assert.Equal(t, "Alpha", hearings[1].Title)
 }
 

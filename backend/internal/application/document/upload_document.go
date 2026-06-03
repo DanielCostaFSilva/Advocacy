@@ -2,8 +2,6 @@ package document
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/google/uuid"
 	caseDomain "legalflow/internal/domain/legalcase"
@@ -52,17 +50,7 @@ func (uc *UploadDocumentUseCase) Execute(ctx context.Context, input UploadDocume
 		return nil, err
 	}
 
-	meta := timelineDomain.DocumentMetadata{
-		DocumentID:   doc.ID.String(),
-		DocumentType: string(doc.Type),
-		FileName:     doc.FileName,
-	}
-	metaJSON, err := json.Marshal(meta)
-	if err != nil {
-		return nil, err
-	}
-
-	event := timelineDomain.NewEventWithMetadata(caseID, timelineDomain.EventDocumentUploaded, fmt.Sprintf("Documento enviado: %s", input.Name), metaJSON)
+	event := timelineDomain.NewDocumentUploadedEvent(doc.CaseID, doc)
 	if err := uc.timelineRepo.Create(ctx, event); err != nil {
 		return nil, err
 	}

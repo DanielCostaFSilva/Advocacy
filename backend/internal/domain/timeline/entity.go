@@ -1,6 +1,7 @@
 package timeline
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,7 +12,7 @@ type TimelineEvent struct {
 	CaseID      uuid.UUID
 	Type        EventType
 	Description string
-	Metadata    []byte
+	Metadata    json.RawMessage
 	CreatedAt   time.Time
 }
 
@@ -25,7 +26,7 @@ func NewEvent(caseID uuid.UUID, eventType EventType, description string) *Timeli
 	}
 }
 
-func NewEventWithMetadata(caseID uuid.UUID, eventType EventType, description string, metadata []byte) *TimelineEvent {
+func NewEventWithMetadata(caseID uuid.UUID, eventType EventType, description string, metadata json.RawMessage) *TimelineEvent {
 	event := NewEvent(caseID, eventType, description)
 	event.Metadata = metadata
 	return event
