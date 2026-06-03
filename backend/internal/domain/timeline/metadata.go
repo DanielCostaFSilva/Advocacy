@@ -18,3 +18,9 @@ type DocumentDownloadMetadata struct {
 	DocumentID string `json:"document_id"`
 	FileName   string `json:"file_name"`
 }
+
+type ContractMetadata struct {
+	ContractID   string `json:"contract_id"`
+	ContractType string `json:"contract_type"`
+	Amount       string `json:"amount"`
+}
