@@ -85,6 +85,53 @@ func (q *Queries) GetContractByID(ctx context.Context, id uuid.UUID) (Contract, 
 	return i, err
 }
 
+	const updateContract = `-- name: UpdateContract :one
+UPDATE contracts
+SET title = $2, description = $3, type = $4, amount = $5, start_date = $6, end_date = $7, active = $8, updated_at = NOW()
+WHERE id = $1
+RETURNING id, client_id, case_id, title, description, type, amount, start_date, end_date, active, created_at, updated_at
+`
+
+type UpdateContractParams struct {
+	ID          uuid.UUID
+	Title       string
+	Description sql.NullString
+	Type        string
+	Amount      string
+	StartDate   time.Time
+	EndDate     sql.NullTime
+	Active      bool
+}
+
+func (q *Queries) UpdateContract(ctx context.Context, arg UpdateContractParams) (Contract, error) {
+	row := q.db.QueryRowContext(ctx, updateContract,
+		arg.ID,
+		arg.Title,
+		arg.Description,
+		arg.Type,
+		arg.Amount,
+		arg.StartDate,
+		arg.EndDate,
+		arg.Active,
+	)
+	var i Contract
+	err := row.Scan(
+		&i.ID,
+		&i.ClientID,
+		&i.CaseID,
+		&i.Title,
+		&i.Description,
+		&i.Type,
+		&i.Amount,
+		&i.StartDate,
+		&i.EndDate,
+		&i.Active,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listContractsByCaseID = `-- name: ListContractsByCaseID :many
 SELECT id, client_id, case_id, title, description, type, amount, start_date, end_date, active, created_at, updated_at FROM contracts
 WHERE case_id = $1

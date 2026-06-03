@@ -24,3 +24,10 @@ type ContractMetadata struct {
 	ContractType string `json:"contract_type"`
 	Amount       string `json:"amount"`
 }
+
+type ContractUpdatedMetadata struct {
+	ContractID   string `json:"contract_id"`
+	OldAmount    string `json:"old_amount"`
+	NewAmount    string `json:"new_amount"`
+	ContractType string `json:"contract_type"`
+}

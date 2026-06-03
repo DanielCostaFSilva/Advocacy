@@ -29,6 +29,17 @@ func NewDocumentDownloadedEvent(caseID uuid.UUID, document *documentDomain.Docum
 	return NewEventWithMetadata(caseID, EventDocumentDownloaded, fmt.Sprintf("Documento acessado: %s", document.Name), metaJSON)
 }
 
+func NewContractUpdatedEvent(contract *contractDomain.Contract, oldAmount string) *TimelineEvent {
+	meta := ContractUpdatedMetadata{
+		ContractID:   contract.ID.String(),
+		OldAmount:    oldAmount,
+		NewAmount:    contract.Amount.String(),
+		ContractType: string(contract.Type),
+	}
+	metaJSON, _ := json.Marshal(meta)
+	return NewEventWithMetadata(contract.CaseID, EventContractUpdated, fmt.Sprintf("Contrato atualizado: %s", contract.Title), metaJSON)
+}
+
 func NewContractCreatedEvent(caseID uuid.UUID, contract *contractDomain.Contract) *TimelineEvent {
 	meta := ContractMetadata{
 		ContractID:   contract.ID.String(),

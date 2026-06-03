@@ -66,6 +66,35 @@ func (r *ContractRepository) FindByID(ctx context.Context, id uuid.UUID) (*domai
 	return toContractDomain(result), nil
 }
 
+func (r *ContractRepository) Update(ctx context.Context, contract *domain.Contract) error {
+	var description sql.NullString
+	if contract.Description != "" {
+		description = sql.NullString{String: contract.Description, Valid: true}
+	}
+
+	var endDate sql.NullTime
+	if contract.EndDate != nil {
+		endDate = sql.NullTime{Time: *contract.EndDate, Valid: true}
+	}
+
+	updated, err := r.q.UpdateContract(ctx, UpdateContractParams{
+		ID:          contract.ID,
+		Title:       contract.Title,
+		Description: description,
+		Type:        string(contract.Type),
+		Amount:      contract.Amount.String(),
+		StartDate:   contract.StartDate,
+		EndDate:     endDate,
+		Active:      contract.Active,
+	})
+	if err != nil {
+		return err
+	}
+
+	contract.UpdatedAt = updated.UpdatedAt
+	return nil
+}
+
 func (r *ContractRepository) ListByCaseID(ctx context.Context, caseID uuid.UUID) ([]domain.Contract, error) {
 	rows, err := r.q.ListContractsByCaseID(ctx, caseID)
 	if err != nil {

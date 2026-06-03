@@ -14,4 +14,5 @@ const (
 	EventDocumentUpdated   EventType = "DOCUMENT_UPDATED"
 	EventDocumentDeleted   EventType = "DOCUMENT_DELETED"
 	EventContractCreated   EventType = "CONTRACT_CREATED"
+	EventContractUpdated   EventType = "CONTRACT_UPDATED"
 )

@@ -22,6 +22,45 @@ type Contract struct {
 	UpdatedAt   time.Time
 }
 
+func UpdateContract(
+	contract *Contract,
+	title string,
+	description string,
+	contractType ContractType,
+	amount decimal.Decimal,
+	startDate time.Time,
+	endDate *time.Time,
+	active bool,
+) (*Contract, error) {
+	if len(title) < 3 {
+		return nil, ErrInvalidTitle
+	}
+	switch contractType {
+	case ContractTypeFixedFee, ContractTypeHourly, ContractTypeSuccessFee, ContractTypeMonthly:
+	default:
+		return nil, ErrInvalidContractType
+	}
+	if !amount.IsPositive() {
+		return nil, ErrInvalidAmount
+	}
+	if startDate.IsZero() {
+		return nil, ErrInvalidStartDate
+	}
+	if endDate != nil && !endDate.After(startDate) {
+		return nil, ErrInvalidEndDate
+	}
+
+	contract.Title = title
+	contract.Description = description
+	contract.Type = contractType
+	contract.Amount = amount
+	contract.StartDate = startDate
+	contract.EndDate = endDate
+	contract.Active = active
+	contract.UpdatedAt = time.Now()
+	return contract, nil
+}
+
 func NewContract(
 	clientID uuid.UUID,
 	caseID uuid.UUID,
