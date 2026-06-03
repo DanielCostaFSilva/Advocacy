@@ -44,12 +44,16 @@ func (uc *GetCaseTimelineUseCase) Execute(ctx context.Context, input GetCaseTime
 
 	dtos := make([]TimelineEventDTO, len(events))
 	for i, e := range events {
-		dtos[i] = TimelineEventDTO{
+		dto := TimelineEventDTO{
 			ID:          e.ID.String(),
 			Type:        string(e.Type),
 			Description: e.Description,
 			CreatedAt:   e.CreatedAt,
 		}
+		if len(e.Metadata) > 0 {
+			dto.Metadata = &e.Metadata
+		}
+		dtos[i] = dto
 	}
 
 	return &GetCaseTimelineOutput{

@@ -7,6 +7,8 @@ import (
 	appAuth "legalflow/internal/application/auth"
 	appCase "legalflow/internal/application/legalcase"
 	appClient "legalflow/internal/application/client"
+	appDocument "legalflow/internal/application/document"
+	appHearing "legalflow/internal/application/hearing"
 	appTimeline "legalflow/internal/application/timeline"
 	"legalflow/internal/application/user"
 	"legalflow/internal/config"
@@ -14,6 +16,8 @@ import (
 	"legalflow/internal/health"
 	httpAuth 	"legalflow/internal/http/auth"
 	httpClient "legalflow/internal/http/client"
+	httpDocument "legalflow/internal/http/document"
+	httpHearing "legalflow/internal/http/hearing"
 	httpCase "legalflow/internal/http/legalcase"
 	httpTimeline "legalflow/internal/http/timeline"
 	httpuser "legalflow/internal/http/user"
@@ -104,6 +108,23 @@ func main() {
 		getCaseTimeline := appTimeline.NewGetCaseTimelineUseCase(timelineRepo, caseRepo)
 		timelineHandler := httpTimeline.NewHandler(getCaseTimeline)
 
+		hearingRepo := postgres.NewHearingRepository(db)
+		createHearing := appHearing.NewCreateHearingUseCase(hearingRepo, caseRepo, timelineRepo)
+		hearingHandler := httpHearing.NewHandler(createHearing)
+
+		listHearings := appHearing.NewListHearingsUseCase(hearingRepo)
+		listHearingsHandler := httpHearing.NewListHandler(listHearings)
+
+		docRepo := postgres.NewDocumentRepository(db)
+		uploadDocument := appDocument.NewUploadDocumentUseCase(docRepo, caseRepo, timelineRepo)
+		documentHandler := httpDocument.NewHandler(uploadDocument)
+
+		listCaseDocuments := appDocument.NewListCaseDocumentsUseCase(docRepo, caseRepo)
+		listDocumentsHandler := httpDocument.NewListHandler(listCaseDocuments)
+
+		downloadDocument := appDocument.NewGetDocumentDownloadUseCase(docRepo, timelineRepo, appDocument.NewTemporaryDownloadURLProvider())
+		downloadHandler := httpDocument.NewDownloadHandler(downloadDocument)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -118,6 +139,11 @@ func main() {
 			getCaseHandler.Register(r)
 			statusHandler.Register(r)
 			timelineHandler.Register(r)
+			listHearingsHandler.Register(r)
+			hearingHandler.Register(r)
+			documentHandler.Register(r)
+			listDocumentsHandler.Register(r)
+			downloadHandler.Register(r)
 		})
 	}
 

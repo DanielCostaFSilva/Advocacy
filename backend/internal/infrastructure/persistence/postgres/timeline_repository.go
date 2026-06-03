@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/sqlc-dev/pqtype"
@@ -29,9 +30,10 @@ func (r *TimelineRepository) FindByCaseID(ctx context.Context, caseID uuid.UUID)
 
 	events := make([]domain.TimelineEvent, len(rows))
 	for i, row := range rows {
-		var metadata []byte
+			var metadata json.RawMessage
 		if row.Metadata.Valid {
-			metadata = row.Metadata.RawMessage
+			metadata = make(json.RawMessage, len(row.Metadata.RawMessage))
+			copy(metadata, row.Metadata.RawMessage)
 		}
 		events[i] = domain.TimelineEvent{
 			ID:          row.ID,
@@ -48,7 +50,7 @@ func (r *TimelineRepository) FindByCaseID(ctx context.Context, caseID uuid.UUID)
 func (r *TimelineRepository) Create(ctx context.Context, event *domain.TimelineEvent) error {
 	var metadata pqtype.NullRawMessage
 	if len(event.Metadata) > 0 {
-		metadata = pqtype.NullRawMessage{RawMessage: event.Metadata, Valid: true}
+		metadata = pqtype.NullRawMessage{RawMessage: []byte(event.Metadata), Valid: true}
 	}
 
 	created, err := r.q.CreateTimelineEvent(ctx, CreateTimelineEventParams{

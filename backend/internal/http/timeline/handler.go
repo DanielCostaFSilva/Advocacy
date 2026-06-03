@@ -45,12 +45,16 @@ func (h *Handler) GetTimeline(w http.ResponseWriter, r *http.Request) {
 
 	events := make([]EventItem, len(output.Events))
 	for i, e := range output.Events {
-		events[i] = EventItem{
+		item := EventItem{
 			ID:          e.ID,
 			Type:        e.Type,
 			Description: e.Description,
 			CreatedAt:   e.CreatedAt,
 		}
+		if e.Metadata != nil {
+			item.Metadata = e.Metadata
+		}
+		events[i] = item
 	}
 
 	writeJSON(w, http.StatusOK, TimelineResponse{Events: events})

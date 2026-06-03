@@ -66,6 +66,35 @@ func TestGetCaseTimeline_ShouldReturnErrCaseNotFound(t *testing.T) {
 	assert.ErrorIs(t, err, ErrCaseNotFound)
 }
 
+func TestGetCaseTimeline_ShouldIncludeMetadata(t *testing.T) {
+	caseID := uuid.New()
+	now := time.Now()
+	meta := []byte(`{"hearing_id":"abc","hearing_type":"conciliation"}`)
+
+	uc := NewGetCaseTimelineUseCase(
+		&domain.MockRepository{
+			FindByCaseIDFunc: func(ctx context.Context, id uuid.UUID) ([]domain.TimelineEvent, error) {
+				return []domain.TimelineEvent{
+					{ID: uuid.New(), CaseID: caseID, Type: domain.EventHearingCreated, Description: "Audiência agendada", Metadata: meta, CreatedAt: now},
+				}, nil
+			},
+		},
+		&caseDomain.MockCaseRepository{
+			FindByIDFunc: func(ctx context.Context, id uuid.UUID) (*caseDomain.Case, error) {
+				return &caseDomain.Case{ID: caseID}, nil
+			},
+		},
+	)
+
+	output, err := uc.Execute(context.Background(), GetCaseTimelineInput{CaseID: caseID.String()})
+
+	require.NoError(t, err)
+	require.Len(t, output.Events, 1)
+	require.NotNil(t, output.Events[0].Metadata)
+	assert.Contains(t, string(*output.Events[0].Metadata), `"hearing_id":"abc"`)
+	assert.Contains(t, string(*output.Events[0].Metadata), `"hearing_type":"conciliation"`)
+}
+
 func TestGetCaseTimeline_ShouldReturnErrorWhenRepoFails(t *testing.T) {
 	caseID := uuid.New()
 	repo := &caseDomain.MockCaseRepository{
