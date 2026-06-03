@@ -12,6 +12,21 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+type Contract struct {
+	ID          uuid.UUID
+	ClientID    uuid.UUID
+	CaseID      uuid.UUID
+	Title       string
+	Description sql.NullString
+	Type        string
+	Amount      string
+	StartDate   time.Time
+	EndDate     sql.NullTime
+	Active      bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
 type Case struct {
 	ID          uuid.UUID
 	ClientID    uuid.UUID

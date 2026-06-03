@@ -7,6 +7,7 @@ import (
 	appAuth "legalflow/internal/application/auth"
 	appCase "legalflow/internal/application/legalcase"
 	appClient "legalflow/internal/application/client"
+	appContract "legalflow/internal/application/contract"
 	appDocument "legalflow/internal/application/document"
 	appHearing "legalflow/internal/application/hearing"
 	appTimeline "legalflow/internal/application/timeline"
@@ -19,6 +20,7 @@ import (
 	httpDocument "legalflow/internal/http/document"
 	httpHearing "legalflow/internal/http/hearing"
 	httpCase "legalflow/internal/http/legalcase"
+	httpContract "legalflow/internal/http/contract"
 	httpTimeline "legalflow/internal/http/timeline"
 	httpuser "legalflow/internal/http/user"
 	"legalflow/internal/infrastructure/auth"
@@ -125,6 +127,22 @@ func main() {
 		downloadDocument := appDocument.NewGetDocumentDownloadUseCase(docRepo, timelineRepo, appDocument.NewTemporaryDownloadURLProvider())
 		downloadHandler := httpDocument.NewDownloadHandler(downloadDocument)
 
+		contractRepo := postgres.NewContractRepository(db)
+		createContract := appContract.NewCreateContractUseCase(clientRepo, caseRepo, contractRepo, timelineRepo)
+		contractHandler := httpContract.NewCreateHandler(createContract)
+
+		listContracts := appContract.NewListContractsUseCase(contractRepo)
+		listContractsHandler := httpContract.NewListHandler(listContracts)
+
+		getContract := appContract.NewGetContractUseCase(contractRepo)
+		getContractHandler := httpContract.NewGetHandler(getContract)
+
+		updateContract := appContract.NewUpdateContractUseCase(contractRepo, timelineRepo)
+		updateContractHandler := httpContract.NewUpdateHandler(updateContract)
+
+		closeContract := appContract.NewCloseContractUseCase(contractRepo, timelineRepo)
+		closeContractHandler := httpContract.NewCloseHandler(closeContract)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -144,6 +162,11 @@ func main() {
 			documentHandler.Register(r)
 			listDocumentsHandler.Register(r)
 			downloadHandler.Register(r)
+			contractHandler.Register(r)
+			listContractsHandler.Register(r)
+			getContractHandler.Register(r)
+			updateContractHandler.Register(r)
+			closeContractHandler.Register(r)
 		})
 	}
 
