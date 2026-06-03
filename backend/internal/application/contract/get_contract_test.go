@@ -40,6 +40,10 @@ func (m *mockGetContractRepo) Update(ctx context.Context, contract *domain.Contr
 	return nil
 }
 
+func (m *mockGetContractRepo) Close(ctx context.Context, id uuid.UUID) error {
+	return nil
+}
+
 func TestGetContract_ShouldReturnContract(t *testing.T) {
 	now := time.Now().UTC()
 	contractID := uuid.New()

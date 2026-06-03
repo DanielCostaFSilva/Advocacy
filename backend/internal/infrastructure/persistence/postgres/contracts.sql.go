@@ -132,6 +132,33 @@ func (q *Queries) UpdateContract(ctx context.Context, arg UpdateContractParams) 
 	return i, err
 }
 
+const closeContract = `-- name: CloseContract :one
+UPDATE contracts
+SET active = false, end_date = NOW(), updated_at = NOW()
+WHERE id = $1
+RETURNING id, client_id, case_id, title, description, type, amount, start_date, end_date, active, created_at, updated_at
+`
+
+func (q *Queries) CloseContract(ctx context.Context, id uuid.UUID) (Contract, error) {
+	row := q.db.QueryRowContext(ctx, closeContract, id)
+	var i Contract
+	err := row.Scan(
+		&i.ID,
+		&i.ClientID,
+		&i.CaseID,
+		&i.Title,
+		&i.Description,
+		&i.Type,
+		&i.Amount,
+		&i.StartDate,
+		&i.EndDate,
+		&i.Active,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listContractsByCaseID = `-- name: ListContractsByCaseID :many
 SELECT id, client_id, case_id, title, description, type, amount, start_date, end_date, active, created_at, updated_at FROM contracts
 WHERE case_id = $1

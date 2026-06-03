@@ -12,4 +12,5 @@ var (
 	ErrTimelinePersistence = errors.New("timeline persistence error")
 	ErrContractNotFound    = errors.New("contract not found")
 	ErrInvalidContractID   = errors.New("invalid contract id")
+	ErrContractAlreadyClosed = errors.New("contract already closed")
 )

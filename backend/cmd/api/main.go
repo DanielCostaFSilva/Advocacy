@@ -140,6 +140,9 @@ func main() {
 		updateContract := appContract.NewUpdateContractUseCase(contractRepo, timelineRepo)
 		updateContractHandler := httpContract.NewUpdateHandler(updateContract)
 
+		closeContract := appContract.NewCloseContractUseCase(contractRepo, timelineRepo)
+		closeContractHandler := httpContract.NewCloseHandler(closeContract)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -163,6 +166,7 @@ func main() {
 			listContractsHandler.Register(r)
 			getContractHandler.Register(r)
 			updateContractHandler.Register(r)
+			closeContractHandler.Register(r)
 		})
 	}
 

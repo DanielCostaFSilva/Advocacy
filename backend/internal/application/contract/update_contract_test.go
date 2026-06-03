@@ -46,6 +46,10 @@ func (m *mockUpdateContractRepo) Update(ctx context.Context, contract *contractD
 	return nil
 }
 
+func (m *mockUpdateContractRepo) Close(ctx context.Context, id uuid.UUID) error {
+	return nil
+}
+
 type mockUpdateTimelineRepo struct {
 	CreateFunc func(ctx context.Context, event *timelineDomain.TimelineEvent) error
 }

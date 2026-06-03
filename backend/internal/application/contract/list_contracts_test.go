@@ -40,6 +40,10 @@ func (m *mockContractRepo) Update(ctx context.Context, contract *domain.Contract
 	return nil
 }
 
+func (m *mockContractRepo) Close(ctx context.Context, id uuid.UUID) error {
+	return nil
+}
+
 func TestListContracts_ShouldReturnPaginatedResult(t *testing.T) {
 	now := time.Now().UTC()
 	contracts := []domain.Contract{

@@ -95,6 +95,11 @@ func (r *ContractRepository) Update(ctx context.Context, contract *domain.Contra
 	return nil
 }
 
+func (r *ContractRepository) Close(ctx context.Context, id uuid.UUID) error {
+	_, err := r.q.CloseContract(ctx, id)
+	return err
+}
+
 func (r *ContractRepository) ListByCaseID(ctx context.Context, caseID uuid.UUID) ([]domain.Contract, error) {
 	rows, err := r.q.ListContractsByCaseID(ctx, caseID)
 	if err != nil {
