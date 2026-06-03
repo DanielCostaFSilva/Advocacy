@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -74,6 +76,91 @@ func (r *ContractRepository) ListByCaseID(ctx context.Context, caseID uuid.UUID)
 		contracts[i] = *toContractDomain(row)
 	}
 	return contracts, nil
+}
+
+func (r *ContractRepository) List(ctx context.Context, params domain.ListContractsParams) ([]domain.Contract, int64, error) {
+	var conditions []string
+	var args []any
+	argIdx := 1
+
+	if params.ClientID != "" {
+		conditions = append(conditions, fmt.Sprintf("client_id = $%d", argIdx))
+		args = append(args, params.ClientID)
+		argIdx++
+	}
+	if params.CaseID != "" {
+		conditions = append(conditions, fmt.Sprintf("case_id = $%d", argIdx))
+		args = append(args, params.CaseID)
+		argIdx++
+	}
+	if params.Type != "" {
+		conditions = append(conditions, fmt.Sprintf("type = $%d", argIdx))
+		args = append(args, params.Type)
+		argIdx++
+	}
+	if params.Active != nil {
+		conditions = append(conditions, fmt.Sprintf("active = $%d", argIdx))
+		args = append(args, *params.Active)
+		argIdx++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	sort := "created_at"
+	switch params.Sort {
+	case "created_at":
+		sort = "created_at"
+	case "title":
+		sort = "title"
+	case "amount":
+		sort = "amount"
+	case "start_date":
+		sort = "start_date"
+	}
+
+	order := "asc"
+	if params.Order == "desc" {
+		order = "desc"
+	}
+
+	query := fmt.Sprintf(
+		"SELECT id, client_id, case_id, title, description, type, amount, start_date, end_date, active, created_at, updated_at FROM contracts %s ORDER BY %s %s LIMIT $%d OFFSET $%d",
+		whereClause, sort, order, argIdx, argIdx+1,
+	)
+	args = append(args, params.Limit, params.Offset)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var contracts []domain.Contract
+	for rows.Next() {
+		var c Contract
+		if err := rows.Scan(
+			&c.ID, &c.ClientID, &c.CaseID, &c.Title, &c.Description,
+			&c.Type, &c.Amount, &c.StartDate, &c.EndDate, &c.Active,
+			&c.CreatedAt, &c.UpdatedAt,
+		); err != nil {
+			return nil, 0, err
+		}
+		contracts = append(contracts, *toContractDomain(c))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	var total int64
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM contracts %s", whereClause)
+	if err := r.db.QueryRowContext(ctx, countQuery, args[:len(args)-2]...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	return contracts, total, nil
 }
 
 func toContractDomain(c Contract) *domain.Contract {
