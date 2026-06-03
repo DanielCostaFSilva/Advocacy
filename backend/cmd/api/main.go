@@ -134,6 +134,9 @@ func main() {
 		listContracts := appContract.NewListContractsUseCase(contractRepo)
 		listContractsHandler := httpContract.NewListHandler(listContracts)
 
+		getContract := appContract.NewGetContractUseCase(contractRepo)
+		getContractHandler := httpContract.NewGetHandler(getContract)
+
 		authMW := middleware.AuthMiddleware(newJWTAdapter(jwtService))
 		r.Group(func(r chi.Router) {
 			r.Use(authMW)
@@ -155,6 +158,7 @@ func main() {
 			downloadHandler.Register(r)
 			contractHandler.Register(r)
 			listContractsHandler.Register(r)
+			getContractHandler.Register(r)
 		})
 	}
 

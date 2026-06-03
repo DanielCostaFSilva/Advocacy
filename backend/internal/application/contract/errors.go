@@ -10,4 +10,6 @@ var (
 	ErrInvalidInput        = errors.New("invalid input")
 	ErrContractPersistence = errors.New("contract persistence error")
 	ErrTimelinePersistence = errors.New("timeline persistence error")
+	ErrContractNotFound    = errors.New("contract not found")
+	ErrInvalidContractID   = errors.New("invalid contract id")
 )
